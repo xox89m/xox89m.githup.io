@@ -13,21 +13,6 @@ const PORT = 3000;
 
 app.use(express.json());
 
-// Direct APK Download Endpoint for Android
-app.get(["/download/periodic-table-game.apk", "/api/download-apk", "/api/download/apk"], (_req, res) => {
-  const publicApk = path.join(process.cwd(), "public", "downloads", "periodic-table-game.apk");
-  const distApk = path.join(process.cwd(), "dist", "periodic-table-game.apk");
-  const apkPath = fs.existsSync(publicApk) ? publicApk : distApk;
-
-  if (fs.existsSync(apkPath)) {
-    res.setHeader("Content-Disposition", 'attachment; filename="periodic-table-game.apk"');
-    res.setHeader("Content-Type", "application/vnd.android.package-archive");
-    res.sendFile(apkPath);
-  } else {
-    res.status(404).json({ error: "APK file not found. Please build it using npm run build:apk" });
-  }
-});
-
 // In-memory persistent database for leaderboard & users
 let leaderboard: LeaderboardEntry[] = [
   { id: "bot-1", name: "ดร.เคมีพิสดาร 🧪", avatar: "👨‍🔬", totalPoints: 12450, level: 18, wins: 45 },

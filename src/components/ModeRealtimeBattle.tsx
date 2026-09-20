@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, BattleRoomState, BattleQuestion } from '../types';
 import confetti from 'canvas-confetti';
 import { soundManager } from '../utils/audio';
+import { trackAnswerEvent } from '../services/analytics';
 import { ELEMENTS } from '../data/elements';
 import { Swords, Trophy, Clock, Zap, ArrowLeft, Flame, CheckCircle, XCircle, Users } from 'lucide-react';
 
@@ -229,6 +230,16 @@ export const ModeRealtimeBattle: React.FC<Props> = ({ user, onBackToMenu, onAddS
     }
 
     const timeSpentSec = Math.floor((Date.now() - questionStartTimeRef.current) / 1000);
+
+    // Track analytics event to Firestore
+    trackAnswerEvent({
+      userId: user.id || user.name || 'guest',
+      questionId: q.id || `battle_q_${currentQIndex}`,
+      elementSymbol: q.elementSymbol,
+      gameMode: 'battle',
+      isCorrect,
+      answerTime: Math.max(0.5, timeSpentSec)
+    });
 
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(

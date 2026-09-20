@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidPlayLog(data) {
+      return data.keys().hasAll(['sessionId', 'userId', 'questionId', 'isCorrect', 'answerTime', 'sessionDuration', 'timestamp']) &&
+             data.sessionId is string && data.sessionId.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.questionId is string && data.questionId.size() <= 128 &&
+             data.isCorrect is bool &&
+             data.answerTime is number && data.answerTime >= 0 && data.answerTime <= 3600 &&
+             data.sessionDuration is number && data.sessionDuration >= 0 &&
+             data.timestamp is string && data.timestamp.size() <= 64 &&
+             (!('elementSymbol' in data) || (data.elementSymbol is string && data.elementSymbol.size() <= 64)) &&
+             (!('gameMode' in data) || (data.gameMode is string && data.gameMode.size() <= 64));
+    }
+
+    match /play_logs/{logId} {
+      // Append-only analytics log collection for learning curve analysis & CSV export
+      allow create: if isValidId(logId) && isValidPlayLog(request.resource.data);
+      allow read: if true;
+      allow update, delete: if false;
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { UserProfile } from '../types';
-import { Trophy, Smartphone, Volume2, VolumeX, Sun, Moon } from 'lucide-react';
+import { Trophy, Smartphone, Volume2, VolumeX, Sun, Moon, BarChart3, Music } from 'lucide-react';
 import { useAudio } from '../hooks/useAudio';
 
 interface Props {
@@ -11,6 +11,8 @@ interface Props {
   onOpenAuth: () => void;
   onOpenInstall: () => void;
   onOpenAudio: () => void;
+  onOpenAnalytics: () => void;
+  onOpenMusic?: () => void;
 }
 
 export const Navbar: React.FC<Props> = ({
@@ -20,9 +22,11 @@ export const Navbar: React.FC<Props> = ({
   onOpenLeaderboard,
   onOpenAuth,
   onOpenInstall,
-  onOpenAudio
+  onOpenAudio,
+  onOpenAnalytics,
+  onOpenMusic
 }) => {
-  const { isMuted, playClick, theme, toggleTheme } = useAudio();
+  const { isMuted, playClick, theme, toggleTheme, isIdleSongEnabled, toggleIdleSong } = useAudio();
 
   return (
     <header className="sticky top-0 z-40 w-full border-b-2 border-slate-900 dark:border-zinc-800 bg-white/95 dark:bg-black/95 backdrop-blur-md px-3 sm:px-4 py-2 shadow-sm transition-colors duration-200">
@@ -98,17 +102,46 @@ export const Navbar: React.FC<Props> = ({
             {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
           </button>
 
-          {/* PWA / APK Install Button */}
+          {/* Idle Song: เพลงไม่มีวันไหนที่ไม่คิดถึง Toggle & Modal */}
+          <button
+            onClick={() => {
+              playClick();
+              if (onOpenMusic) {
+                onOpenMusic();
+              } else {
+                toggleIdleSong();
+              }
+            }}
+            title="เครื่องเล่นเพลง: ไม่มีวันไหนที่ไม่คิดถึง (starlost. - PURPEECH)"
+            className="flex items-center justify-center h-8 w-8 rounded-xl border-2 bg-pink-500 hover:bg-pink-600 text-white border-pink-700 shadow-[2px_2px_0px_#be185d] transition active:translate-y-0.5 cursor-pointer"
+          >
+            <Music className="h-4 w-4" />
+          </button>
+
+          {/* Analytics / Event Tracking Button */}
+          <button
+            onClick={() => {
+              playClick();
+              onOpenAnalytics();
+            }}
+            title="สถิติเชิงวิเคราะห์พฤติกรรมผู้เรียน (Analytics)"
+            className="flex items-center gap-1 py-1 px-2 rounded-xl bg-violet-100 dark:bg-violet-950/80 hover:bg-violet-200 dark:hover:bg-violet-900/60 border-2 border-slate-900 dark:border-zinc-800 text-violet-950 dark:text-violet-200 text-xs font-black shadow-[2px_2px_0px_#1e293b] dark:shadow-[2px_2px_0px_#27272a] transition active:translate-y-0.5 cursor-pointer"
+          >
+            <BarChart3 className="h-3.5 w-3.5 text-violet-700 dark:text-violet-400" />
+            <span className="hidden sm:inline">วิเคราะห์</span>
+          </button>
+
+          {/* PWA Install Button */}
           <button
             onClick={() => {
               playClick();
               onOpenInstall();
             }}
-            title="ติดตั้งแอปหรือดาวน์โหลด APK"
+            title="ติดตั้งแอปลงมือถือ (PWA)"
             className="flex items-center gap-1 py-1 px-2 rounded-xl bg-emerald-100 dark:bg-zinc-900 hover:bg-emerald-200 dark:hover:bg-zinc-800 border-2 border-slate-900 dark:border-zinc-800 text-emerald-900 dark:text-emerald-300 text-xs font-black shadow-[2px_2px_0px_#1e293b] dark:shadow-[2px_2px_0px_#27272a] transition active:translate-y-0.5 cursor-pointer"
           >
             <Smartphone className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" />
-            <span className="hidden sm:inline">โหลดแอป/APK</span>
+            <span className="hidden sm:inline">ติดตั้งแอป</span>
             <span className="sm:hidden">แอป</span>
           </button>
 

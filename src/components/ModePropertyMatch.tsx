@@ -1,22 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { PeriodicElement } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { PeriodicElement, UserProfile } from '../types';
 import { ELEMENTS, CATEGORY_INFO } from '../data/elements';
 import confetti from 'canvas-confetti';
 import { soundManager } from '../utils/audio';
+import { trackAnswerEvent } from '../services/analytics';
 import { ArrowLeft, Heart, RefreshCw, Sparkles, CheckCircle2 } from 'lucide-react';
 
 interface Props {
+  user?: UserProfile;
   onBackToMenu: () => void;
   onAddScore: (points: number, wonMatch?: boolean, combo?: number) => void;
 }
 
-export const ModePropertyMatch: React.FC<Props> = ({ onBackToMenu, onAddScore }) => {
+export const ModePropertyMatch: React.FC<Props> = ({ user, onBackToMenu, onAddScore }) => {
   const [stage, setStage] = useState(1);
   const [score, setScore] = useState(0);
   const [combo, setCombo] = useState(0);
   const [maxCombo, setMaxCombo] = useState(0);
   const [lives, setLives] = useState(3);
   const [isGameOver, setIsGameOver] = useState(false);
+  const lastAttemptTimeRef = useRef<number>(Date.now());
 
   // Cards
   const [symbolCards, setSymbolCards] = useState<PeriodicElement[]>([]);
@@ -60,7 +63,24 @@ export const ModePropertyMatch: React.FC<Props> = ({ onBackToMenu, onAddScore })
   const checkMatch = (sym: string | null, prop: string | null) => {
     if (!sym || !prop) return;
 
-    if (sym === prop) {
+    const now = Date.now();
+    const rawTime = Math.round((now - lastAttemptTimeRef.current) / 100) / 10;
+    const answerTime = Math.max(0.5, Math.min(rawTime, 30));
+    lastAttemptTimeRef.current = now;
+
+    const isCorrect = sym === prop;
+
+    // Track analytics event to Firestore
+    trackAnswerEvent({
+      userId: user?.id || user?.name || 'guest',
+      questionId: `match_s${stage}_${sym}`,
+      elementSymbol: sym,
+      gameMode: 'property-match',
+      isCorrect,
+      answerTime
+    });
+
+    if (isCorrect) {
       // MATCH!
       soundManager.playMatchSuccess();
       confetti({

@@ -18,17 +18,23 @@ import {
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  onOpenMusicPlayer?: () => void;
 }
 
-export const AudioSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
+export const AudioSettingsModal: React.FC<Props> = ({ isOpen, onClose, onOpenMusicPlayer }) => {
   const {
     isMuted,
     isBgmEnabled,
+    isIdleSongEnabled,
+    isIdleSongPlaying,
     sfxVolume,
     bgmVolume,
     theme,
     toggleMute,
     toggleBgm,
+    toggleIdleSong,
+    startIdleSong,
+    stopIdleSong,
     setSfxVolume,
     setBgmVolume,
     setTheme,
@@ -333,6 +339,55 @@ export const AudioSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 />
               </div>
             )}
+          </div>
+
+          {/* Idle Song: ไม่มีวันไหนที่ไม่คิดถึง (Special requested song) */}
+          <div className="rounded-2xl border-2 border-pink-200 dark:border-pink-900/60 bg-pink-50/60 dark:bg-pink-950/20 p-4 space-y-2.5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-pink-500 text-white flex items-center justify-center shrink-0">
+                  <Music className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                    เพลง "ไม่มีวันไหนที่ไม่คิดถึง"
+                    <span className="text-[10px] font-normal px-2 py-0.2 rounded-full bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-200">
+                      คลอเบาๆ ตอนไม่กดเล่น
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-600 dark:text-slate-400">
+                    ท่วงทำนองเปียโน & กล่องดนตรีอะคูสติกนุ่มนวล เมื่อพักอยู่ในหน้าหลัก
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                {onOpenMusicPlayer && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onOpenMusicPlayer();
+                    }}
+                    className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-pink-100 hover:bg-pink-200 dark:bg-pink-900/60 dark:hover:bg-pink-900 text-pink-800 dark:text-pink-200 border border-pink-300 dark:border-pink-800 transition cursor-pointer"
+                  >
+                    แผงเพลง & เนื้อเพลง
+                  </button>
+                )}
+                <button
+                  type="button"
+                  disabled={isMuted}
+                  onClick={toggleIdleSong}
+                  className={`px-3 py-1.5 rounded-xl font-black text-xs border-2 border-slate-900 dark:border-zinc-700 transition active:scale-95 cursor-pointer disabled:opacity-50 shrink-0 ${
+                    isIdleSongEnabled && !isMuted
+                      ? 'bg-pink-500 text-white shadow-[2px_2px_0px_#1e293b] dark:shadow-[2px_2px_0px_#27272a]'
+                      : 'bg-white dark:bg-zinc-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100'
+                  }`}
+                >
+                  {isIdleSongEnabled && !isMuted ? 'กำลังเปิด 🎶' : 'เปิดเพลงคลอ'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

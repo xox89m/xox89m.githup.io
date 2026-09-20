@@ -1,0 +1,66 @@
+{
+  "entities": {
+    "PlayLog": {
+      "title": "PlayLog",
+      "description": "Analytics log recorded every time a player answers a question or matches an element",
+      "type": "object",
+      "properties": {
+        "sessionId": {
+          "type": "string",
+          "description": "Unique session identifier for the current browser visit"
+        },
+        "userId": {
+          "type": "string",
+          "description": "User identifier or guest ID"
+        },
+        "questionId": {
+          "type": "string",
+          "description": "Identifier of the question or prompt"
+        },
+        "elementSymbol": {
+          "type": "string",
+          "description": "Chemical symbol or name of the target element"
+        },
+        "gameMode": {
+          "type": "string",
+          "description": "The active game mode, e.g. quiz, property-match, drag-drop"
+        },
+        "isCorrect": {
+          "type": "boolean",
+          "description": "Whether the player answered correctly"
+        },
+        "answerTime": {
+          "type": "number",
+          "description": "Seconds taken to answer the question"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "ISO timestamp string when the answer was submitted"
+        },
+        "sessionDuration": {
+          "type": "number",
+          "description": "Elapsed seconds since the player started the app session"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": [
+        "sessionId",
+        "userId",
+        "questionId",
+        "isCorrect",
+        "answerTime",
+        "sessionDuration",
+        "timestamp"
+      ]
+    }
+  },
+  "firestore": {
+    "/play_logs/{logId}": {
+      "schema": "PlayLog",
+      "description": "Collection of gameplay analytics events and answer logs for learning curve evaluation"
+    }
+  }
+}

@@ -1,16 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { PeriodicElement } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { PeriodicElement, UserProfile } from '../types';
 import { ELEMENTS, CATEGORY_INFO, LEVEL1_GROUP_PROGRESSION, TUTORIAL_CONFIG } from '../data/elements';
 import confetti from 'canvas-confetti';
 import { soundManager } from '../utils/audio';
+import { trackAnswerEvent } from '../services/analytics';
 import { ArrowLeft, Compass, Search, Sparkles, Heart, RefreshCw } from 'lucide-react';
 
 interface Props {
+  user?: UserProfile;
   onBackToMenu: () => void;
   onAddScore: (points: number, wonMatch?: boolean, combo?: number) => void;
 }
 
-export const ModeGridPlacement: React.FC<Props> = ({ onBackToMenu, onAddScore }) => {
+export const ModeGridPlacement: React.FC<Props> = ({ user, onBackToMenu, onAddScore }) => {
   const [isTutorial, setIsTutorial] = useState(true);
   const [groupStageIndex, setGroupStageIndex] = useState(0);
   const [missingStep, setMissingStep] = useState(1);
@@ -19,6 +21,7 @@ export const ModeGridPlacement: React.FC<Props> = ({ onBackToMenu, onAddScore })
   const [maxCombo, setMaxCombo] = useState(0);
   const [lives, setLives] = useState(3);
   const [feedback, setFeedback] = useState<{ text: string; type: 'correct' | 'wrong' | 'info' } | null>(null);
+  const lastActionTimeRef = useRef<number>(Date.now());
 
   // Active elements in grid
   const [activeGroups, setActiveGroups] = useState<number[]>([1]);
@@ -96,7 +99,22 @@ export const ModeGridPlacement: React.FC<Props> = ({ onBackToMenu, onAddScore })
       return;
     }
 
-    if (selectedTraySymbol === expectedSymbol) {
+    const now = Date.now();
+    const answerTime = Math.max(0.5, Math.min(Math.round((now - lastActionTimeRef.current) / 100) / 10, 30));
+    lastActionTimeRef.current = now;
+
+    const isCorrect = selectedTraySymbol === expectedSymbol;
+
+    trackAnswerEvent({
+      userId: user?.id || user?.name || 'guest',
+      questionId: `grid_group_${activeGroups.join('_')}_${expectedSymbol}`,
+      elementSymbol: expectedSymbol,
+      gameMode: 'grid-placement',
+      isCorrect,
+      answerTime
+    });
+
+    if (isCorrect) {
       // Correct!
       handleCorrectPlacement(expectedSymbol);
     } else {

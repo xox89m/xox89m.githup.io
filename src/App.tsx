@@ -12,6 +12,8 @@ import { LeaderboardModal } from './components/LeaderboardModal';
 import { AuthModal } from './components/AuthModal';
 import { PWAInstallModal } from './components/PWAInstallModal';
 import { AudioSettingsModal } from './components/AudioSettingsModal';
+import { AnalyticsModal } from './components/AnalyticsModal';
+import { MusicPlayer } from './components/MusicPlayer';
 import { soundManager } from './utils/audio';
 import { ELEMENTS, CATEGORY_INFO } from './data/elements';
 import { 
@@ -21,7 +23,9 @@ import {
   Zap,
   Smartphone,
   Trophy,
-  LogIn
+  LogIn,
+  BarChart3,
+  Music
 } from 'lucide-react';
 
 export default function App() {
@@ -36,13 +40,15 @@ export default function App() {
     updatePresenceStatus 
   } = useRealtimeLeaderboard(user);
 
-  const { theme } = useAudio();
+  const { theme, isIdleSongEnabled, isIdleSongPlaying, startIdleSong, stopIdleSong, toggleIdleSong } = useAudio();
 
   const [activeScreen, setActiveScreen] = useState<'home' | 'quiz' | 'grid' | 'match' | 'battle' | 'explorer'>('home');
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [showInstall, setShowInstall] = useState(false);
   const [showAudioSettings, setShowAudioSettings] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showMusicPlayerModal, setShowMusicPlayerModal] = useState(false);
 
   // Spotlight carousel
   const [spotlightIndex, setSpotlightIndex] = useState(0);
@@ -58,6 +64,38 @@ export default function App() {
       }
     }
   }, [theme]);
+
+  // Idle song ("ไม่มีวันไหนที่ไม่คิดถึง"): play softly in home screen if enabled, pause during active gameplay
+  useEffect(() => {
+    if (activeScreen === 'home') {
+      if (isIdleSongEnabled) {
+        // Attempt to start idle song; Web Audio API will activate as soon as user interacts
+        startIdleSong();
+      }
+    } else {
+      stopIdleSong();
+    }
+  }, [activeScreen, isIdleSongEnabled, startIdleSong, stopIdleSong]);
+
+  // Also unlock audio context on first user click/touch anywhere on screen
+  useEffect(() => {
+    const handleFirstInteraction = () => {
+      soundManager.initContext();
+      if (activeScreen === 'home' && isIdleSongEnabled && !soundManager.isIdleSongPlaying) {
+        soundManager.startIdleSong();
+      }
+      window.removeEventListener('pointerdown', handleFirstInteraction);
+      window.removeEventListener('keydown', handleFirstInteraction);
+    };
+
+    window.addEventListener('pointerdown', handleFirstInteraction, { once: true });
+    window.addEventListener('keydown', handleFirstInteraction, { once: true });
+
+    return () => {
+      window.removeEventListener('pointerdown', handleFirstInteraction);
+      window.removeEventListener('keydown', handleFirstInteraction);
+    };
+  }, [activeScreen, isIdleSongEnabled]);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -96,6 +134,8 @@ export default function App() {
         onOpenAuth={() => setShowAuth(true)}
         onOpenInstall={() => setShowInstall(true)}
         onOpenAudio={() => setShowAudioSettings(true)}
+        onOpenAnalytics={() => setShowAnalytics(true)}
+        onOpenMusic={() => setShowMusicPlayerModal(true)}
       />
 
       {/* Main Content Area */}
@@ -138,6 +178,64 @@ export default function App() {
                   <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">{user.totalPoints.toLocaleString()}</span>
                 </div>
               </div>
+
+              {/* Idle Song Status & Quick Control Strip */}
+              <div className="mt-3 pt-3 border-t border-dashed border-slate-200 dark:border-zinc-800 flex items-center justify-between">
+                <div 
+                  onClick={() => setShowMusicPlayerModal(true)}
+                  className="flex items-center gap-2 text-xs cursor-pointer hover:opacity-80 transition"
+                >
+                  <span className="flex h-2 w-2 relative">
+                    {isIdleSongPlaying && (
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
+                    )}
+                    <span className={`relative inline-flex rounded-full h-2 w-2 ${isIdleSongPlaying ? 'bg-pink-500' : 'bg-slate-300 dark:bg-zinc-700'}`}></span>
+                  </span>
+                  <span className="font-bold text-slate-700 dark:text-slate-300">
+                    🎶 เพลงไม่มีวันไหนที่ไม่คิดถึง (starlost.)
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setShowMusicPlayerModal(true)}
+                    className="px-2 py-1 rounded-lg text-[11px] font-black border border-slate-900 dark:border-zinc-700 bg-pink-100 dark:bg-pink-950/60 text-pink-800 dark:text-pink-300 hover:bg-pink-200 transition cursor-pointer"
+                  >
+                    แผงควบคุม & เนื้อเพลง
+                  </button>
+                  <button
+                    onClick={toggleIdleSong}
+                    className="px-2.5 py-1 rounded-lg text-[11px] font-black border border-slate-900 dark:border-zinc-700 bg-pink-50 dark:bg-zinc-900 text-pink-700 dark:text-pink-300 hover:bg-pink-100 transition cursor-pointer"
+                  >
+                    {isIdleSongEnabled ? 'ปิด' : 'เปิด'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* ANALYTICS & EVENT TRACKING BANNER (Requested by user for Excel/Looker Studio) */}
+            <div className="bg-gradient-to-r from-violet-600 to-purple-700 text-white border-2 border-slate-900 dark:border-zinc-800 rounded-3xl p-4 shadow-[4px_4px_0px_#1e293b] dark:shadow-[4px_4px_0px_#27272a] flex items-center justify-between transition cursor-pointer hover:brightness-105 active:translate-y-0.5"
+              onClick={() => {
+                soundManager.playClick();
+                setShowAnalytics(true);
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-xl shrink-0 border border-white/30">
+                  📊
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-black text-sm text-white">ระบบวิเคราะห์ข้อมูลผู้เล่น (Analytics)</span>
+                    <span className="text-[10px] font-black px-2 py-0.2 rounded-full bg-amber-300 text-amber-950">
+                      Firebase
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-purple-100 mt-0.5">
+                    ตรวจอัตราตอบถูก 10 นาทีแรก vs. หลังจากนั้น และแนวโน้มพัฒนาการของผู้เรียน
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-white/80 shrink-0" />
             </div>
 
             {/* Real-time Online Presence & Activity Bar */}
@@ -424,6 +522,7 @@ export default function App() {
         {/* SCREEN 3: GRID PLACEMENT */}
         {activeScreen === 'grid' && (
           <ModeGridPlacement
+            user={user}
             onBackToMenu={() => setActiveScreen('home')}
             onAddScore={addScore}
           />
@@ -432,6 +531,7 @@ export default function App() {
         {/* SCREEN 4: PROPERTY MATCH */}
         {activeScreen === 'match' && (
           <ModePropertyMatch
+            user={user}
             onBackToMenu={() => setActiveScreen('home')}
             onAddScore={addScore}
           />
@@ -491,6 +591,20 @@ export default function App() {
       <AudioSettingsModal
         isOpen={showAudioSettings}
         onClose={() => setShowAudioSettings(false)}
+        onOpenMusicPlayer={() => setShowMusicPlayerModal(true)}
+      />
+
+      <AnalyticsModal
+        isOpen={showAnalytics}
+        onClose={() => setShowAnalytics(false)}
+      />
+
+      {/* Persistent & Floating Music Player (PURPEECH - ไม่มีวันไหนที่ไม่คิดถึง) */}
+      <MusicPlayer
+        isGameActive={activeScreen === 'quiz' || activeScreen === 'battle'}
+        isOpenModal={showMusicPlayerModal}
+        onCloseModal={() => setShowMusicPlayerModal(false)}
+        onRequestOpenModal={() => setShowMusicPlayerModal(true)}
       />
     </div>
   );

@@ -10,11 +10,14 @@ export type AudioTheme = 'light' | 'dark';
 
 class SoundEngine {
   private ctx: AudioContext | null = null;
-  private isMuted: boolean = false;
-  private sfxVolume: number = 0.8;
-  private bgmVolume: number = 0.35;
-  private isBgmPlaying: boolean = false;
-  private isBgmEnabled: boolean = false;
+  public isMuted: boolean = false;
+  public sfxVolume: number = 0.8;
+  public bgmVolume: number = 0.35;
+  public isBgmPlaying: boolean = false;
+  public isBgmEnabled: boolean = false;
+  public isIdleSongEnabled: boolean = true;
+  public isIdleSongPlaying: boolean = false;
+  private idleSongTimeout: any = null;
   private currentTheme: AudioTheme = 'light';
   private bgmInterval: NodeJS.Timeout | null = null;
   private listeners: Array<() => void> = [];
@@ -27,6 +30,9 @@ class SoundEngine {
 
         const savedBgm = localStorage.getItem('chem_bgm_enabled');
         if (savedBgm !== null) this.isBgmEnabled = savedBgm === 'true';
+
+        const savedIdle = localStorage.getItem('chem_idle_song_enabled');
+        if (savedIdle !== null) this.isIdleSongEnabled = savedIdle === 'true';
 
         const savedSfxVol = localStorage.getItem('chem_sfx_volume');
         if (savedSfxVol !== null) this.sfxVolume = parseFloat(savedSfxVol);
@@ -50,7 +56,9 @@ class SoundEngine {
         if (this.ctx && this.ctx.state === 'suspended') {
           this.ctx.resume();
         }
-        if (this.isBgmEnabled && !this.isMuted && !this.isBgmPlaying) {
+        if (this.isIdleSongEnabled && !this.isMuted && !this.isIdleSongPlaying) {
+          this.startIdleSong();
+        } else if (this.isBgmEnabled && !this.isMuted && !this.isBgmPlaying) {
           this.startBgm();
         }
         window.removeEventListener('pointerdown', unlock);
@@ -62,7 +70,7 @@ class SoundEngine {
     }
   }
 
-  private initContext(): AudioContext | null {
+  public initContext(): AudioContext | null {
     if (!this.ctx && typeof window !== 'undefined') {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (AudioCtx) {
@@ -138,6 +146,30 @@ class SoundEngine {
 
   public getIsBgmEnabled(): boolean {
     return this.isBgmEnabled;
+  }
+
+  public getIsIdleSongEnabled(): boolean {
+    return this.isIdleSongEnabled;
+  }
+
+  public getIsIdleSongPlaying(): boolean {
+    return this.isIdleSongPlaying;
+  }
+
+  public toggleIdleSong(): boolean {
+    this.isIdleSongEnabled = !this.isIdleSongEnabled;
+    try {
+      localStorage.setItem('chem_idle_song_enabled', String(this.isIdleSongEnabled));
+    } catch {}
+
+    if (this.isIdleSongEnabled && !this.isMuted) {
+      this.initContext();
+      this.startIdleSong();
+    } else {
+      this.stopIdleSong();
+    }
+    this.notify();
+    return this.isIdleSongEnabled;
   }
 
   public toggleBgm(): boolean {
@@ -944,6 +976,139 @@ class SoundEngine {
     if (this.bgmInterval) {
       clearInterval(this.bgmInterval);
       this.bgmInterval = null;
+    }
+    this.notify();
+  }
+
+  /**
+   * Play gentle melody of "ไม่มีวันไหนที่ไม่คิดถึง" softly when idle/in menu
+   */
+  public startIdleSong() {
+    if (this.isIdleSongPlaying || this.isMuted || !this.isIdleSongEnabled) return;
+    const ctx = this.initContext();
+    if (!ctx) return;
+
+    this.isIdleSongPlaying = true;
+    this.notify();
+
+    const loopDurationMs = 17500; // 17.5 seconds per loop
+
+    const playCycle = () => {
+      if (!this.isIdleSongPlaying || this.isMuted || !this.ctx) return;
+
+      try {
+        const now = this.ctx.currentTime;
+        const vol = Math.max(0.01, this.bgmVolume * 0.45); // gentle & soft (เบาๆ)
+
+        // Melody notes of "ไม่มีวันไหนที่ไม่คิดถึง" (Key of G Major)
+        const melody = [
+          // ไม่-มี-วัน-ไหน
+          { f: 293.66, t: 0.0, d: 0.35 },  // D4 (ไม่)
+          { f: 392.00, t: 0.4, d: 0.35 },  // G4 (มี)
+          { f: 440.00, t: 0.8, d: 0.35 },  // A4 (วัน)
+          { f: 493.88, t: 1.2, d: 0.75 },  // B4 (ไหน)
+          // ที่-ไม่-คิด-ถึง-เธอ
+          { f: 493.88, t: 2.1, d: 0.32 },  // B4 (ที่)
+          { f: 440.00, t: 2.5, d: 0.32 },  // A4 (ไม่)
+          { f: 392.00, t: 2.9, d: 0.32 },  // G4 (คิด)
+          { f: 440.00, t: 3.3, d: 0.85 },  // A4 (ถึง-เธอ)
+          // หลับ-ตา-ทุก-ครั้ง-ยัง-เห็น-เธอ
+          { f: 293.66, t: 4.4, d: 0.35 },  // D4 (หลับ)
+          { f: 392.00, t: 4.8, d: 0.35 },  // G4 (ตา)
+          { f: 440.00, t: 5.2, d: 0.35 },  // A4 (ทุก)
+          { f: 493.88, t: 5.6, d: 0.55 },  // B4 (ครั้ง)
+          { f: 587.33, t: 6.2, d: 0.65 },  // D5 (ยัง)
+          { f: 493.88, t: 6.9, d: 0.45 },  // B4 (เห็น)
+          { f: 440.00, t: 7.4, d: 1.10 },  // A4 (เธอ...)
+          // แม้-วัน-เว-ลา-จะ-ผ่าน-ไป
+          { f: 493.88, t: 8.8, d: 0.32 },  // B4 (แม้)
+          { f: 523.25, t: 9.2, d: 0.32 },  // C5 (วัน)
+          { f: 493.88, t: 9.6, d: 0.32 },  // B4 (เว)
+          { f: 440.00, t: 10.0, d: 0.32 }, // A4 (ลา)
+          { f: 392.00, t: 10.4, d: 0.45 }, // G4 (จะ)
+          { f: 329.63, t: 10.9, d: 0.55 }, // E4 (ผ่าน)
+          // แสน-นาน-แต่
+          { f: 392.00, t: 11.6, d: 0.50 }, // G4 (ไป)
+          { f: 440.00, t: 12.2, d: 0.45 }, // A4 (แสน)
+          { f: 493.88, t: 12.7, d: 0.55 }, // B4 (นาน)
+          // ใจ-ดวง-นี้-ยัง-คง-คิด-ถึง-เธอ
+          { f: 440.00, t: 13.4, d: 0.35 }, // A4 (แต่)
+          { f: 493.88, t: 13.8, d: 0.35 }, // B4 (ใจ)
+          { f: 440.00, t: 14.2, d: 0.45 }, // A4 (ยัง)
+          { f: 392.00, t: 14.7, d: 1.80 }  // G4 (มี-แต่-เธอ...)
+        ];
+
+        // Soft Acoustic Piano/Chime Synth for Melody
+        melody.forEach(note => {
+          const osc = this.ctx!.createOscillator();
+          const gain = this.ctx!.createGain();
+
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(note.f, now + note.t);
+
+          const startTime = now + note.t;
+          gain.gain.setValueAtTime(0.0001, startTime);
+          gain.gain.linearRampToValueAtTime(0.06 * vol, startTime + 0.04);
+          gain.gain.exponentialRampToValueAtTime(0.0001, startTime + note.d + 0.2);
+
+          osc.connect(gain);
+          gain.connect(this.ctx!.destination);
+
+          osc.start(startTime);
+          osc.stop(startTime + note.d + 0.25);
+        });
+
+        // Warm chord roots and arpeggios in the background
+        const chords = [
+          { t: 0.0, notes: [98.00, 196.00, 246.94] },  // G
+          { t: 2.1, notes: [123.47, 185.00, 293.66] }, // Bm
+          { t: 4.4, notes: [130.81, 196.00, 329.63] }, // C
+          { t: 6.9, notes: [146.83, 220.00, 369.99] }, // D
+          { t: 8.8, notes: [164.81, 196.00, 246.94] }, // Em
+          { t: 11.6, notes: [130.81, 196.00, 329.63] }, // C
+          { t: 13.4, notes: [146.83, 220.00, 293.66] }, // D
+          { t: 14.7, notes: [98.00, 146.83, 196.00] }   // G
+        ];
+
+        chords.forEach(chord => {
+          chord.notes.forEach((freq, idx) => {
+            const osc = this.ctx!.createOscillator();
+            const gain = this.ctx!.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + chord.t + idx * 0.12);
+
+            const startTime = now + chord.t + idx * 0.12;
+            const duration = 1.6;
+
+            gain.gain.setValueAtTime(0.0001, startTime);
+            gain.gain.linearRampToValueAtTime(0.025 * vol, startTime + 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+            osc.connect(gain);
+            gain.connect(this.ctx!.destination);
+
+            osc.start(startTime);
+            osc.stop(startTime + duration);
+          });
+        });
+      } catch (e) {
+        console.warn('Idle song error', e);
+      }
+
+      if (this.isIdleSongPlaying) {
+        this.idleSongTimeout = setTimeout(playCycle, loopDurationMs);
+      }
+    };
+
+    playCycle();
+  }
+
+  public stopIdleSong() {
+    this.isIdleSongPlaying = false;
+    if (this.idleSongTimeout) {
+      clearTimeout(this.idleSongTimeout);
+      this.idleSongTimeout = null;
     }
     this.notify();
   }

@@ -3,6 +3,7 @@ import { ELEMENTS, CATEGORY_INFO } from '../data/elements';
 import { QuizQuestion, UserProfile } from '../types';
 import confetti from 'canvas-confetti';
 import { soundManager } from '../utils/audio';
+import { trackAnswerEvent } from '../services/analytics';
 import { 
   Clock, 
   Flame, 
@@ -214,6 +215,18 @@ export const ModePeriodicQuiz: React.FC<Props> = ({
     setSelectedOption(-1); // Timeout
     setCombo(0);
     soundManager.playWrong();
+
+    const q = questions[currentIndex];
+    if (q) {
+      trackAnswerEvent({
+        userId: user.id || user.name || 'guest',
+        questionId: q.id || `q_${currentIndex}`,
+        elementSymbol: q.elementSymbol,
+        gameMode: 'quiz',
+        isCorrect: false,
+        answerTime: 15
+      });
+    }
   };
 
   const handleSelectOption = (idx: number) => {
@@ -225,6 +238,17 @@ export const ModePeriodicQuiz: React.FC<Props> = ({
 
     const q = questions[currentIndex];
     const isCorrect = idx === q.correctIndex;
+    const answerTimeSec = Math.max(0.5, 15 - timeLeft);
+
+    // Track analytics event to Firestore
+    trackAnswerEvent({
+      userId: user.id || user.name || 'guest',
+      questionId: q.id || `q_${currentIndex}`,
+      elementSymbol: q.elementSymbol,
+      gameMode: 'quiz',
+      isCorrect,
+      answerTime: answerTimeSec
+    });
 
     if (isCorrect) {
       const newCombo = combo + 1;

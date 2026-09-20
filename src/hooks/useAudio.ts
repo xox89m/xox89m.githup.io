@@ -4,6 +4,8 @@ import { soundManager, AudioTheme } from '../utils/audio';
 export function useAudio() {
   const [isMuted, setIsMuted] = useState(soundManager.getIsMuted());
   const [isBgmEnabled, setIsBgmEnabled] = useState(soundManager.getIsBgmEnabled());
+  const [isIdleSongEnabled, setIsIdleSongEnabled] = useState(soundManager.getIsIdleSongEnabled());
+  const [isIdleSongPlaying, setIsIdleSongPlaying] = useState(soundManager.getIsIdleSongPlaying());
   const [sfxVolume, setSfxVolumeState] = useState(soundManager.getSfxVolume());
   const [bgmVolume, setBgmVolumeState] = useState(soundManager.getBgmVolume());
   const [theme, setThemeState] = useState<AudioTheme>(soundManager.getTheme());
@@ -12,6 +14,8 @@ export function useAudio() {
     const unsubscribe = soundManager.subscribe(() => {
       setIsMuted(soundManager.getIsMuted());
       setIsBgmEnabled(soundManager.getIsBgmEnabled());
+      setIsIdleSongEnabled(soundManager.getIsIdleSongEnabled());
+      setIsIdleSongPlaying(soundManager.getIsIdleSongPlaying());
       setSfxVolumeState(soundManager.getSfxVolume());
       setBgmVolumeState(soundManager.getBgmVolume());
       setThemeState(soundManager.getTheme());
@@ -27,6 +31,18 @@ export function useAudio() {
 
   const toggleBgm = useCallback(() => {
     return soundManager.toggleBgm();
+  }, []);
+
+  const toggleIdleSong = useCallback(() => {
+    return soundManager.toggleIdleSong();
+  }, []);
+
+  const startIdleSong = useCallback(() => {
+    soundManager.startIdleSong();
+  }, []);
+
+  const stopIdleSong = useCallback(() => {
+    soundManager.stopIdleSong();
   }, []);
 
   const setSfxVolume = useCallback((vol: number) => {
@@ -48,11 +64,16 @@ export function useAudio() {
   return {
     isMuted,
     isBgmEnabled,
+    isIdleSongEnabled,
+    isIdleSongPlaying,
     sfxVolume,
     bgmVolume,
     theme,
     toggleMute,
     toggleBgm,
+    toggleIdleSong,
+    startIdleSong,
+    stopIdleSong,
     setSfxVolume,
     setBgmVolume,
     setTheme,
