@@ -1,0 +1,14 @@
+{
+  "appId": "com.chemgame.periodictable",
+  "appName": "เกมเกี่ยวกับตารางธาตุ",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": true
+  }
+}

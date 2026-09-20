@@ -1,0 +1,38 @@
+{
+  "id": "/",
+  "name": "เกมเกี่ยวกับตารางธาตุ",
+  "short_name": "เกมตารางธาตุ",
+  "description": "เกมตารางธาตุบนมือถือ iOS และ Android รองรับ Google Sign-In ระบบสะสมคะแนน กระดานผู้นำ และการดวลแข่งขันเรียลไทม์",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8fafc",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

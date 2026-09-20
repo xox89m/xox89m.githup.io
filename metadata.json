@@ -1,0 +1,6 @@
+{
+  "name": "เกมเกี่ยวกับตารางธาตุ",
+  "description": "เกมตารางธาตุบนมือถือ iOS และ Android พร้อมระบบเสียง SFX ดนตรีประกอบห้องแล็บ รองรับ Google Sign-In กระดานผู้นำเรียลไทม์ และโหมดตอบคำถาม",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
