@@ -110,3 +110,27 @@ export interface BattleRoomState {
   startTime?: number;
   winnerId?: string | null;
 }
+
+export interface Review {
+  id?: string;
+  userId: string;
+  userName?: string;
+  userAvatar?: string;
+  rating: number; // 1 - 5
+  comment?: string;
+  timestamp: string; // ISO date string
+  createdAt?: string;
+}
+
+export interface ReviewStats {
+  averageRating: number;
+  totalReviews: number;
+  ratingCounts: {
+    1: number;
+    2: number;
+    3: number;
+    4: number;
+    5: number;
+  };
+}
+

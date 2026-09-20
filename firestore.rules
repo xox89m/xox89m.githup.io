@@ -23,10 +23,28 @@ service cloud.firestore {
              (!('gameMode' in data) || (data.gameMode is string && data.gameMode.size() <= 64));
     }
 
+    function isValidReview(data) {
+      return data.keys().hasAll(['userId', 'rating', 'timestamp']) &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.rating is number && data.rating >= 1 && data.rating <= 5 &&
+             data.timestamp is string && data.timestamp.size() <= 64 &&
+             (!('userName' in data) || (data.userName is string && data.userName.size() <= 100)) &&
+             (!('userAvatar' in data) || (data.userAvatar is string && data.userAvatar.size() <= 64)) &&
+             (!('comment' in data) || (data.comment is string && data.comment.size() <= 1000)) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64));
+    }
+
     match /play_logs/{logId} {
       // Append-only analytics log collection for learning curve analysis & CSV export
       allow create: if isValidId(logId) && isValidPlayLog(request.resource.data);
       allow read: if true;
+      allow update, delete: if false;
+    }
+
+    match /reviews/{reviewId} {
+      // Public review and rating collection with open submission for all players (guest & auth)
+      allow read: if true;
+      allow create: if isValidId(reviewId) && isValidReview(request.resource.data);
       allow update, delete: if false;
     }
   }

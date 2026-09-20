@@ -55,12 +55,56 @@
         "sessionDuration",
         "timestamp"
       ]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Game rating and feedback reviews from players",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Player identifier or guest user ID"
+        },
+        "userName": {
+          "type": "string",
+          "description": "Player display name"
+        },
+        "userAvatar": {
+          "type": "string",
+          "description": "Player avatar emoji or icon"
+        },
+        "rating": {
+          "type": "number",
+          "description": "Rating score between 1 and 5"
+        },
+        "comment": {
+          "type": "string",
+          "description": "User feedback or comment"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Submission ISO date string"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": [
+        "userId",
+        "rating",
+        "timestamp"
+      ]
     }
   },
   "firestore": {
     "/play_logs/{logId}": {
       "schema": "PlayLog",
       "description": "Collection of gameplay analytics events and answer logs for learning curve evaluation"
+    },
+    "/reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "Collection of user game ratings and reviews"
     }
   }
 }

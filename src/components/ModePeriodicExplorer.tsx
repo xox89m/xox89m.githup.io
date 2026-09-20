@@ -3,6 +3,7 @@ import { PeriodicElement } from '../types';
 import { ELEMENTS, CATEGORY_INFO, GROUP_NAMES_TH } from '../data/elements';
 import { soundManager } from '../utils/audio';
 import { ArrowLeft, Search, X, BookOpen, Volume2 } from 'lucide-react';
+import { AtomIllustration } from './AtomIllustration';
 
 interface Props {
   onBackToMenu: () => void;
@@ -123,15 +124,15 @@ export const ModePeriodicExplorer: React.FC<Props> = ({ onBackToMenu }) => {
                 soundManager.playElementSound(el.atomicNumber);
                 setSelectedElement(el);
               }}
-              className={`p-2 rounded-2xl border-2 border-slate-900 dark:border-zinc-700 ${cat.bg} flex flex-col items-center justify-center text-center shadow-[3px_3px_0px_#1e293b] dark:shadow-[3px_3px_0px_#27272a] hover:-translate-y-0.5 transition cursor-pointer active:scale-95`}
+              className={`p-2 rounded-2xl border-2 border-slate-900 dark:border-zinc-600 ${cat.bg} flex flex-col items-center justify-center text-center shadow-[3px_3px_0px_#1e293b] dark:shadow-[3px_3px_0px_#27272a] hover:-translate-y-0.5 hover:ring-2 hover:ring-blue-400 dark:hover:ring-cyan-400 transition cursor-pointer active:scale-95`}
             >
-              <span className="text-[10px] text-slate-500 dark:text-slate-300 font-bold self-start pl-1">
+              <span className="text-[10px] text-slate-600 dark:text-zinc-200 font-black self-start pl-1">
                 {el.atomicNumber}
               </span>
-              <span className="text-xl font-black text-slate-900 dark:text-white leading-tight">
+              <span className="text-xl font-black text-slate-900 dark:text-white leading-tight drop-shadow-xs">
                 {el.symbol}
               </span>
-              <span className="text-[10px] font-bold text-slate-700 dark:text-cyan-200 truncate w-full">
+              <span className="text-[10px] font-bold text-slate-800 dark:text-zinc-100 truncate w-full">
                 {el.nameTH}
               </span>
             </button>
@@ -141,47 +142,55 @@ export const ModePeriodicExplorer: React.FC<Props> = ({ onBackToMenu }) => {
 
       {/* Element Detail Modal */}
       {selectedElement && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="relative w-full max-w-sm rounded-3xl border-3 border-slate-900 dark:border-zinc-800 bg-white dark:bg-black p-6 shadow-2xl space-y-4 text-slate-800 dark:text-slate-100 transition-colors">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 animate-in fade-in overflow-y-auto">
+          <div className="relative w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-3xl border-3 border-slate-900 dark:border-zinc-700 bg-white dark:bg-zinc-950 p-5 shadow-2xl space-y-4 text-slate-800 dark:text-slate-100 transition-colors">
             <button
               onClick={() => setSelectedElement(null)}
-              className="absolute right-4 top-4 rounded-full p-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-900 cursor-pointer"
+              className="absolute right-4 top-4 rounded-full p-1.5 text-slate-500 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer z-10"
             >
               <X className="h-5 w-5" />
             </button>
 
             {/* Giant Element Card */}
             <div
-              className={`p-5 rounded-2xl border-2 border-slate-900 dark:border-zinc-700 ${
+              className={`p-4 rounded-2xl border-2 border-slate-900 dark:border-zinc-600 ${
                 CATEGORY_INFO[selectedElement.category].bg
               } text-center space-y-1 shadow-[4px_4px_0px_#1e293b] dark:shadow-[4px_4px_0px_#27272a]`}
             >
-              <div className="flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-300">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-zinc-200">
                 <span>เลขอะตอม {selectedElement.atomicNumber}</span>
                 <span>{selectedElement.atomicMass ? `${selectedElement.atomicMass} u` : ''}</span>
               </div>
-              <div className="text-5xl font-black text-slate-900 dark:text-white pt-1">
+              <div className="text-5xl font-black text-slate-900 dark:text-white pt-1 drop-shadow-sm">
                 {selectedElement.symbol}
               </div>
-              <div className="flex items-center justify-center gap-1.5 text-lg font-bold text-slate-900 dark:text-cyan-300 pt-1">
+              <div className="flex items-center justify-center gap-1.5 text-lg font-bold text-slate-900 dark:text-cyan-200 pt-1">
                 <span>{selectedElement.nameTH}</span>
                 {selectedElement.nameEN && (
-                  <span className="text-xs text-slate-600 dark:text-slate-300 font-normal">
+                  <span className="text-xs text-slate-600 dark:text-zinc-300 font-normal">
                     ({selectedElement.nameEN})
                   </span>
                 )}
                 <button
                   onClick={() => handleSpeakName(selectedElement.nameTH)}
                   title="ฟังเสียงอ่าน"
-                  className="p-1 hover:bg-white/20 dark:hover:bg-zinc-800 rounded-full text-slate-700 dark:text-slate-200 cursor-pointer"
+                  className="p-1 hover:bg-white/20 dark:hover:bg-zinc-800 rounded-full text-slate-700 dark:text-zinc-200 cursor-pointer"
                 >
                   <Volume2 className="h-4 w-4" />
                 </button>
               </div>
-              <div className="inline-block mt-2 px-3 py-0.5 rounded-full text-xs font-bold border border-slate-900 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white">
+              <div className="inline-block mt-2 px-3 py-0.5 rounded-full text-xs font-bold border border-slate-900 dark:border-zinc-600 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white">
                 {CATEGORY_INFO[selectedElement.category].emoji}{' '}
                 {CATEGORY_INFO[selectedElement.category].label}
               </div>
+            </div>
+
+            {/* High-Contrast SVG Bohr Atom Model (Vivid in Dark Mode) */}
+            <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-100 dark:bg-black border-2 border-slate-200 dark:border-zinc-800">
+              <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                แบบจำลองอะตอม & วงอิเล็กตรอน (Bohr Model)
+              </span>
+              <AtomIllustration element={selectedElement} size="md" showDetails={true} />
             </div>
 
             {/* Details */}

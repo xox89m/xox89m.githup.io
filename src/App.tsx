@@ -12,8 +12,12 @@ import { LeaderboardModal } from './components/LeaderboardModal';
 import { AuthModal } from './components/AuthModal';
 import { AudioSettingsModal } from './components/AudioSettingsModal';
 import { AnalyticsModal } from './components/AnalyticsModal';
+import { RatingReviewModal } from './components/RatingReviewModal';
 import { MusicPlayer } from './components/MusicPlayer';
 import { soundManager } from './utils/audio';
+import { useMusic } from './hooks/useMusic';
+import { subscribeToGameReviews } from './services/reviewService';
+import { ReviewStats } from './types';
 import { ELEMENTS, CATEGORY_INFO } from './data/elements';
 import { 
   ChevronRight, 
@@ -23,7 +27,8 @@ import {
   Trophy,
   LogIn,
   BarChart3,
-  Music
+  Music,
+  Star
 } from 'lucide-react';
 
 export default function App() {
@@ -45,7 +50,25 @@ export default function App() {
   const [showAuth, setShowAuth] = useState(false);
   const [showAudioSettings, setShowAudioSettings] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
   const [showMusicPlayerModal, setShowMusicPlayerModal] = useState(false);
+  const { currentTrack, isPlaying: isMusicPlaying, togglePlay: toggleMusicPlay } = useMusic();
+
+  const [reviewStats, setReviewStats] = useState<ReviewStats>({
+    averageRating: 5.0,
+    totalReviews: 0,
+    ratingCounts: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+  });
+
+  // Subscribe to real-time review statistics
+  useEffect(() => {
+    const unsub = subscribeToGameReviews((_, stats) => {
+      setReviewStats(stats);
+    });
+    return () => {
+      unsub();
+    };
+  }, []);
 
   // Spotlight carousel
   const [spotlightIndex, setSpotlightIndex] = useState(0);
@@ -132,6 +155,8 @@ export default function App() {
         onOpenAudio={() => setShowAudioSettings(true)}
         onOpenAnalytics={() => setShowAnalytics(true)}
         onOpenMusic={() => setShowMusicPlayerModal(true)}
+        onOpenRating={() => setShowRatingModal(true)}
+        reviewStats={reviewStats}
       />
 
       {/* Main Content Area */}
@@ -175,34 +200,46 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Idle Song Status & Quick Control Strip */}
-              <div className="mt-3 pt-3 border-t border-dashed border-slate-200 dark:border-zinc-800 flex items-center justify-between">
+              {/* Live Music Player Status & Quick Control Strip */}
+              <div className="mt-3 pt-3 border-t border-dashed border-slate-200 dark:border-zinc-800 flex items-center justify-between gap-2">
                 <div 
                   onClick={() => setShowMusicPlayerModal(true)}
-                  className="flex items-center gap-2 text-xs cursor-pointer hover:opacity-80 transition"
+                  className="flex items-center gap-2 text-xs cursor-pointer hover:opacity-80 transition min-w-0 flex-1"
                 >
-                  <span className="flex h-2 w-2 relative">
-                    {isIdleSongPlaying && (
+                  <span className="flex h-2 w-2 relative shrink-0">
+                    {isMusicPlaying && (
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
                     )}
-                    <span className={`relative inline-flex rounded-full h-2 w-2 ${isIdleSongPlaying ? 'bg-pink-500' : 'bg-slate-300 dark:bg-zinc-700'}`}></span>
+                    <span className={`relative inline-flex rounded-full h-2 w-2 ${isMusicPlaying ? 'bg-pink-500' : 'bg-slate-300 dark:bg-zinc-700'}`}></span>
                   </span>
-                  <span className="font-bold text-slate-700 dark:text-slate-300">
-                    🎶 เพลงไม่มีวันไหนที่ไม่คิดถึง (starlost.)
-                  </span>
+                  <div className="min-w-0 flex-1 truncate">
+                    <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">
+                      🎵 {currentTrack.title}
+                    </span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate block">
+                      {currentTrack.artist}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <button
                     onClick={() => setShowMusicPlayerModal(true)}
                     className="px-2 py-1 rounded-lg text-[11px] font-black border border-slate-900 dark:border-zinc-700 bg-pink-100 dark:bg-pink-950/60 text-pink-800 dark:text-pink-300 hover:bg-pink-200 transition cursor-pointer"
                   >
-                    แผงควบคุม & เนื้อเพลง
+                    เพลย์ลิสต์
                   </button>
                   <button
-                    onClick={toggleIdleSong}
-                    className="px-2.5 py-1 rounded-lg text-[11px] font-black border border-slate-900 dark:border-zinc-700 bg-pink-50 dark:bg-zinc-900 text-pink-700 dark:text-pink-300 hover:bg-pink-100 transition cursor-pointer"
+                    onClick={() => {
+                      soundManager.playClick();
+                      toggleMusicPlay();
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-black border border-slate-900 dark:border-zinc-700 transition cursor-pointer ${
+                      isMusicPlaying
+                        ? 'bg-pink-600 text-white'
+                        : 'bg-emerald-500 text-slate-950'
+                    }`}
                   >
-                    {isIdleSongEnabled ? 'ปิด' : 'เปิด'}
+                    {isMusicPlaying ? 'หยุด' : 'เล่น'}
                   </button>
                 </div>
               </div>
@@ -232,6 +269,37 @@ export default function App() {
                 </div>
               </div>
               <ChevronRight className="h-5 w-5 text-white/80 shrink-0" />
+            </div>
+
+            {/* RATING & REVIEWS PROMINENT HERO CARD */}
+            <div
+              onClick={() => {
+                soundManager.playClick();
+                setShowRatingModal(true);
+              }}
+              className="bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 dark:from-amber-600 dark:via-amber-700 dark:to-yellow-700 text-slate-950 dark:text-white border-2 border-slate-900 dark:border-zinc-700 rounded-3xl p-4 shadow-[4px_4px_0px_#1e293b] dark:shadow-[4px_4px_0px_#000000] flex items-center justify-between transition cursor-pointer hover:brightness-105 active:translate-y-0.5 select-none"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-slate-950 text-amber-400 dark:bg-black flex items-center justify-center text-xl shrink-0 border-2 border-slate-900 dark:border-zinc-700 shadow-sm">
+                  ⭐
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-black text-sm text-slate-950 dark:text-white">
+                      ให้คะแนนและรีวิวเกม (Rating & Reviews)
+                    </span>
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-950 text-amber-300 dark:bg-black">
+                      {reviewStats.averageRating.toFixed(1)} ★
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-900 dark:text-amber-100 mt-0.5 font-bold">
+                    {reviewStats.totalReviews > 0
+                      ? `คะแนนเฉลี่ย ${reviewStats.averageRating.toFixed(1)} ดาว (${reviewStats.totalReviews} รีวิว) · แตะเพื่อให้ดาว`
+                      : 'แตะเพื่อให้ดาวและเป็นคนแรกที่ส่งรีวิวเกม!'}
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-slate-900/70 dark:text-white/80 shrink-0" />
             </div>
 
             {/* Real-time Online Presence & Activity Bar */}
@@ -588,6 +656,13 @@ export default function App() {
       <AnalyticsModal
         isOpen={showAnalytics}
         onClose={() => setShowAnalytics(false)}
+      />
+
+      {/* Rating and Review System Modal */}
+      <RatingReviewModal
+        isOpen={showRatingModal}
+        onClose={() => setShowRatingModal(false)}
+        user={user}
       />
 
       {/* Persistent & Floating Music Player (PURPEECH - ไม่มีวันไหนที่ไม่คิดถึง) */}

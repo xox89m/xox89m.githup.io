@@ -744,66 +744,66 @@ export const CATEGORY_INFO: Record<ElementCategory, {
 }> = {
   'alkali-metal': {
     label: 'โลหะแอลคาไล (หมู่ 1A)',
-    bg: 'bg-rose-100 dark:bg-rose-950/40',
+    bg: 'bg-rose-100 dark:bg-rose-950/80 dark:border-rose-400/80',
     badgeBg: 'bg-rose-500 text-white',
-    text: 'text-rose-700 dark:text-rose-300',
-    border: 'border-rose-400',
+    text: 'text-rose-700 dark:text-rose-200',
+    border: 'border-rose-400 dark:border-rose-400',
     emoji: '⚡'
   },
   'alkaline-earth-metal': {
     label: 'โลหะแอลคาไลน์เอิร์ท (หมู่ 2A)',
-    bg: 'bg-amber-100 dark:bg-amber-950/40',
+    bg: 'bg-amber-100 dark:bg-amber-950/80 dark:border-amber-400/80',
     badgeBg: 'bg-amber-500 text-white',
-    text: 'text-amber-700 dark:text-amber-300',
-    border: 'border-amber-400',
+    text: 'text-amber-700 dark:text-amber-200',
+    border: 'border-amber-400 dark:border-amber-400',
     emoji: '🦴'
   },
   'transition-metal': {
     label: 'โลหะแทรนซิชัน (หมู่ B)',
-    bg: 'bg-blue-100 dark:bg-blue-950/40',
+    bg: 'bg-blue-100 dark:bg-blue-950/80 dark:border-blue-400/80',
     badgeBg: 'bg-blue-500 text-white',
-    text: 'text-blue-700 dark:text-blue-300',
-    border: 'border-blue-400',
+    text: 'text-blue-700 dark:text-blue-200',
+    border: 'border-blue-400 dark:border-blue-400',
     emoji: '⚔️'
   },
   'post-transition-metal': {
     label: 'โลหะหลังทรานซิชัน',
-    bg: 'bg-teal-100 dark:bg-teal-950/40',
+    bg: 'bg-teal-100 dark:bg-teal-950/80 dark:border-teal-400/80',
     badgeBg: 'bg-teal-500 text-white',
-    text: 'text-teal-700 dark:text-teal-300',
-    border: 'border-teal-400',
+    text: 'text-teal-700 dark:text-teal-200',
+    border: 'border-teal-400 dark:border-teal-400',
     emoji: '🥫'
   },
   'metalloid': {
     label: 'กึ่งโลหะ',
-    bg: 'bg-emerald-100 dark:bg-emerald-950/40',
+    bg: 'bg-emerald-100 dark:bg-emerald-950/80 dark:border-emerald-400/80',
     badgeBg: 'bg-emerald-600 text-white',
-    text: 'text-emerald-700 dark:text-emerald-300',
-    border: 'border-emerald-400',
+    text: 'text-emerald-700 dark:text-emerald-200',
+    border: 'border-emerald-400 dark:border-emerald-400',
     emoji: '💻'
   },
   'nonmetal': {
     label: 'อโลหะ',
-    bg: 'bg-lime-100 dark:bg-lime-950/40',
+    bg: 'bg-lime-100 dark:bg-lime-950/80 dark:border-lime-400/80',
     badgeBg: 'bg-lime-600 text-white',
-    text: 'text-lime-800 dark:text-lime-300',
-    border: 'border-lime-400',
+    text: 'text-lime-800 dark:text-lime-200',
+    border: 'border-lime-400 dark:border-lime-400',
     emoji: '🌱'
   },
   'halogen': {
     label: 'ฮาโลเจน (หมู่ 7A)',
-    bg: 'bg-purple-100 dark:bg-purple-950/40',
+    bg: 'bg-purple-100 dark:bg-purple-950/80 dark:border-purple-400/80',
     badgeBg: 'bg-purple-500 text-white',
-    text: 'text-purple-700 dark:text-purple-300',
-    border: 'border-purple-400',
+    text: 'text-purple-700 dark:text-purple-200',
+    border: 'border-purple-400 dark:border-purple-400',
     emoji: '🧪'
   },
   'noble-gas': {
     label: 'แก๊สเฉื่อย (หมู่ 8A)',
-    bg: 'bg-sky-100 dark:bg-sky-950/40',
+    bg: 'bg-sky-100 dark:bg-sky-950/80 dark:border-sky-400/80',
     badgeBg: 'bg-sky-500 text-white',
-    text: 'text-sky-700 dark:text-sky-300',
-    border: 'border-sky-400',
+    text: 'text-sky-700 dark:text-sky-200',
+    border: 'border-sky-400 dark:border-sky-400',
     emoji: '🎈'
   }
 };

@@ -1,7 +1,8 @@
 import React from 'react';
-import { UserProfile } from '../types';
-import { Trophy, Volume2, VolumeX, Sun, Moon, BarChart3, Music } from 'lucide-react';
+import { UserProfile, ReviewStats } from '../types';
+import { Trophy, Volume2, VolumeX, Sun, Moon, BarChart3, Music, Star } from 'lucide-react';
 import { useAudio } from '../hooks/useAudio';
+import { useMusic } from '../hooks/useMusic';
 
 interface Props {
   user: UserProfile;
@@ -12,6 +13,8 @@ interface Props {
   onOpenAudio: () => void;
   onOpenAnalytics: () => void;
   onOpenMusic?: () => void;
+  onOpenRating?: () => void;
+  reviewStats?: ReviewStats;
 }
 
 export const Navbar: React.FC<Props> = ({
@@ -22,9 +25,12 @@ export const Navbar: React.FC<Props> = ({
   onOpenAuth,
   onOpenAudio,
   onOpenAnalytics,
-  onOpenMusic
+  onOpenMusic,
+  onOpenRating,
+  reviewStats
 }) => {
-  const { isMuted, playClick, theme, toggleTheme, isIdleSongEnabled, toggleIdleSong } = useAudio();
+  const { isMuted, playClick, theme, toggleTheme } = useAudio();
+  const { currentTrack, isPlaying: isPlayingMusic } = useMusic();
 
   return (
     <header className="sticky top-0 z-40 w-full border-b-2 border-slate-900 dark:border-zinc-800 bg-white/95 dark:bg-black/95 backdrop-blur-md px-3 sm:px-4 py-2 shadow-sm transition-colors duration-200">
@@ -100,20 +106,23 @@ export const Navbar: React.FC<Props> = ({
             {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
           </button>
 
-          {/* Idle Song: เพลงไม่มีวันไหนที่ไม่คิดถึง Toggle & Modal */}
+          {/* Music Player Button with Live Song Title & Status */}
           <button
             onClick={() => {
               playClick();
-              if (onOpenMusic) {
-                onOpenMusic();
-              } else {
-                toggleIdleSong();
-              }
+              if (onOpenMusic) onOpenMusic();
             }}
-            title="เครื่องเล่นเพลง: ไม่มีวันไหนที่ไม่คิดถึง (starlost. - PURPEECH)"
-            className="flex items-center justify-center h-8 w-8 rounded-xl border-2 bg-pink-500 hover:bg-pink-600 text-white border-pink-700 shadow-[2px_2px_0px_#be185d] transition active:translate-y-0.5 cursor-pointer"
+            title={`เครื่องเล่นเพลง: ${currentTrack.title} (${currentTrack.artist})`}
+            className={`flex items-center gap-1.5 py-1 px-2.5 rounded-xl border-2 transition active:translate-y-0.5 cursor-pointer max-w-[130px] sm:max-w-[190px] shadow-[2px_2px_0px_#1e293b] dark:shadow-[2px_2px_0px_#27272a] ${
+              isPlayingMusic
+                ? 'bg-pink-500 hover:bg-pink-600 text-white border-pink-700 dark:border-pink-500 shadow-[2px_2px_0px_#be185d]'
+                : 'bg-slate-100 dark:bg-zinc-900 hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-700 dark:text-slate-300 border-slate-900 dark:border-zinc-800'
+            }`}
           >
-            <Music className="h-4 w-4" />
+            <Music className={`h-3.5 w-3.5 shrink-0 ${isPlayingMusic ? 'animate-bounce text-pink-200' : 'text-slate-500 dark:text-slate-400'}`} />
+            <span className="text-[11px] font-black truncate">
+              {isPlayingMusic ? currentTrack.title : 'เพลง'}
+            </span>
           </button>
 
           {/* Analytics / Event Tracking Button */}
@@ -128,6 +137,23 @@ export const Navbar: React.FC<Props> = ({
             <BarChart3 className="h-3.5 w-3.5 text-violet-700 dark:text-violet-400" />
             <span className="hidden sm:inline">วิเคราะห์</span>
           </button>
+
+          {/* Rating & Review Button */}
+          {onOpenRating && (
+            <button
+              onClick={() => {
+                playClick();
+                onOpenRating();
+              }}
+              title={`ให้คะแนนและรีวิวเกม (${reviewStats ? reviewStats.averageRating.toFixed(1) + ' ★' : 'รีวิว'})`}
+              className="flex items-center gap-1 py-1 px-2 rounded-xl bg-amber-100 dark:bg-amber-950/80 hover:bg-amber-200 dark:hover:bg-amber-900/60 border-2 border-slate-900 dark:border-zinc-800 text-amber-950 dark:text-amber-200 text-xs font-black shadow-[2px_2px_0px_#1e293b] dark:shadow-[2px_2px_0px_#27272a] transition active:translate-y-0.5 cursor-pointer"
+            >
+              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-600 dark:text-amber-400" />
+              <span className="text-[11px] font-black">
+                {reviewStats && reviewStats.totalReviews > 0 ? `${reviewStats.averageRating.toFixed(1)}★` : 'รีวิว'}
+              </span>
+            </button>
+          )}
 
           {/* Leaderboard Button */}
           <button

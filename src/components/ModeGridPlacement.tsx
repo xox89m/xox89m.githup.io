@@ -5,6 +5,7 @@ import confetti from 'canvas-confetti';
 import { soundManager } from '../utils/audio';
 import { trackAnswerEvent } from '../services/analytics';
 import { ArrowLeft, Compass, Search, Sparkles, Heart, RefreshCw } from 'lucide-react';
+import { AtomIllustration } from './AtomIllustration';
 
 interface Props {
   user?: UserProfile;
@@ -370,15 +371,15 @@ export const ModeGridPlacement: React.FC<Props> = ({ user, onBackToMenu, onAddSc
                 return (
                   <div
                     key={el.symbol}
-                    className={`h-16 w-full rounded-xl border-2 border-slate-900 dark:border-zinc-700 ${cat.bg} flex flex-col items-center justify-center shadow-[2px_2px_0px_#1e293b] dark:shadow-[2px_2px_0px_#27272a] p-1 text-center`}
+                    className={`h-16 w-full rounded-xl border-2 border-slate-900 dark:border-zinc-600 ${cat.bg} flex flex-col items-center justify-center shadow-[2px_2px_0px_#1e293b] dark:shadow-[2px_2px_0px_#27272a] p-1 text-center`}
                   >
-                    <span className="text-base font-black text-slate-900 dark:text-white leading-tight">
+                    <span className="text-base font-black text-slate-900 dark:text-white leading-tight drop-shadow-xs">
                       {el.symbol}
                     </span>
-                    <span className="text-[10px] font-bold text-slate-700 dark:text-cyan-200 truncate max-w-[50px]">
+                    <span className="text-[10px] font-bold text-slate-800 dark:text-zinc-100 truncate max-w-[52px]">
                       {el.nameTH}
                     </span>
-                    <span className="text-[8px] text-slate-500 dark:text-slate-400">{el.atomicNumber}</span>
+                    <span className="text-[9px] font-black text-slate-600 dark:text-zinc-300">{el.atomicNumber}</span>
                   </div>
                 );
               });
@@ -406,16 +407,16 @@ export const ModeGridPlacement: React.FC<Props> = ({ user, onBackToMenu, onAddSc
                 <button
                   key={el.symbol}
                   onClick={() => handleSelectTrayCard(el.symbol)}
-                  className={`h-16 w-16 rounded-2xl border-2 border-slate-900 dark:border-zinc-700 flex flex-col items-center justify-center transition active:scale-95 cursor-pointer shadow-[3px_3px_0px_#1e293b] dark:shadow-[3px_3px_0px_#27272a] ${
+                  className={`h-16 w-16 rounded-2xl border-2 border-slate-900 dark:border-zinc-600 flex flex-col items-center justify-center transition active:scale-95 cursor-pointer shadow-[3px_3px_0px_#1e293b] dark:shadow-[3px_3px_0px_#27272a] ${
                     isSelected
                       ? 'bg-amber-300 -translate-y-1 scale-105 border-amber-600 ring-2 ring-amber-400 text-slate-950'
                       : `${cat.bg} hover:bg-white dark:hover:bg-zinc-900`
                   }`}
                 >
-                  <span className={`text-lg font-black leading-tight ${isSelected ? 'text-slate-950' : 'text-slate-900 dark:text-white'}`}>
+                  <span className={`text-lg font-black leading-tight ${isSelected ? 'text-slate-950' : 'text-slate-900 dark:text-white drop-shadow-xs'}`}>
                     {el.symbol}
                   </span>
-                  <span className={`text-[10px] font-bold truncate max-w-[50px] ${isSelected ? 'text-slate-900' : 'text-slate-700 dark:text-cyan-200'}`}>
+                  <span className={`text-[10px] font-bold truncate max-w-[50px] ${isSelected ? 'text-slate-900' : 'text-slate-800 dark:text-zinc-100'}`}>
                     {el.nameTH}
                   </span>
                 </button>
@@ -477,18 +478,24 @@ export const ModeGridPlacement: React.FC<Props> = ({ user, onBackToMenu, onAddSc
 
       {/* Trivia Knowledge Popup Modal */}
       {activeTrivia && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 animate-in fade-in">
-          <div className="relative w-full max-w-sm rounded-3xl border-3 border-slate-900 dark:border-zinc-800 bg-white dark:bg-black p-6 shadow-2xl text-center space-y-4 -rotate-1">
-            <div className="inline-block p-3 rounded-2xl bg-yellow-100 dark:bg-zinc-900 border-2 border-slate-900 dark:border-zinc-700 text-3xl mb-1 shadow-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 animate-in fade-in overflow-y-auto">
+          <div className="relative w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-3xl border-3 border-slate-900 dark:border-zinc-700 bg-white dark:bg-zinc-950 p-5 shadow-2xl text-center space-y-3">
+            <div className="inline-block p-2.5 rounded-2xl bg-yellow-100 dark:bg-zinc-900 border-2 border-slate-900 dark:border-zinc-700 text-3xl shadow-sm">
               💡
             </div>
-            <h3 className="text-xl font-black text-slate-900 dark:text-cyan-300">
+            <h3 className="text-xl font-black text-slate-900 dark:text-cyan-200">
               {activeTrivia.nameTH} ({activeTrivia.symbol})
             </h3>
+
+            {/* High-Contrast SVG Bohr Atom Model (Vivid in Dark Mode) */}
+            <div className="flex flex-col items-center justify-center p-2 rounded-2xl bg-slate-50 dark:bg-black border-2 border-slate-200 dark:border-zinc-800">
+              <AtomIllustration element={activeTrivia} size="sm" showDetails={true} />
+            </div>
+
             <p className="text-xs text-slate-700 dark:text-slate-200 leading-relaxed font-semibold">
               {activeTrivia.trivia}
             </p>
-            <div className="bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl p-2.5 text-[11px] text-slate-600 dark:text-slate-300">
+            <div className="bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl p-2 text-[11px] text-slate-700 dark:text-slate-300 font-bold">
               เลขอะตอม {activeTrivia.atomicNumber} · หมู่ {activeTrivia.group} · คาบ {activeTrivia.period}
             </div>
             <button

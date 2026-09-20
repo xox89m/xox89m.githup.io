@@ -4,6 +4,7 @@ import { QuizQuestion, UserProfile } from '../types';
 import confetti from 'canvas-confetti';
 import { soundManager } from '../utils/audio';
 import { trackAnswerEvent } from '../services/analytics';
+import { AtomIllustration } from './AtomIllustration';
 import { 
   Clock, 
   Flame, 
@@ -454,9 +455,9 @@ export const ModePeriodicQuiz: React.FC<Props> = ({
           <div className="space-y-3 pt-1">
             <div className="flex items-start gap-3">
               {/* Element Avatar badge */}
-              <div className={`flex flex-col items-center justify-center h-14 w-14 shrink-0 rounded-2xl border-2 border-slate-900 dark:border-zinc-700 ${cat?.bg || 'bg-blue-100'} shadow-[2px_2px_0px_#1e293b] dark:shadow-[2px_2px_0px_#27272a]`}>
-                <span className="text-[9px] font-bold text-slate-700 dark:text-slate-300">{currentQ.atomicNumber}</span>
-                <span className="text-xl font-black text-slate-900 dark:text-white leading-none">{currentQ.elementSymbol}</span>
+              <div className={`flex flex-col items-center justify-center h-14 w-14 shrink-0 rounded-2xl border-2 border-slate-900 dark:border-zinc-600 ${cat?.bg || 'bg-blue-100 dark:bg-cyan-950/80'} shadow-[2px_2px_0px_#1e293b] dark:shadow-[2px_2px_0px_#27272a]`}>
+                <span className="text-[10px] font-black text-slate-700 dark:text-zinc-200">{currentQ.atomicNumber}</span>
+                <span className="text-xl font-black text-slate-900 dark:text-white leading-none drop-shadow-xs">{currentQ.elementSymbol}</span>
               </div>
               <div>
                 <span className="text-[10px] font-bold text-blue-600 dark:text-cyan-400 uppercase tracking-wider block">
@@ -522,6 +523,16 @@ export const ModePeriodicQuiz: React.FC<Props> = ({
               <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
                 {currentQ.explanation}
               </p>
+
+              {(() => {
+                const qElement = ELEMENTS.find(e => e.symbol === currentQ.elementSymbol || e.atomicNumber === currentQ.atomicNumber);
+                if (!qElement) return null;
+                return (
+                  <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-white dark:bg-black border border-slate-200 dark:border-zinc-800 my-1">
+                    <AtomIllustration element={qElement} size="sm" showDetails={true} />
+                  </div>
+                );
+              })()}
               
               <div className="pt-2 flex justify-end">
                 <button

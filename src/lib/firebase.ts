@@ -1,21 +1,14 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import firebaseConfig from '../../firebase-applet-config.json';
 
-export const firebaseConfig = {
-  apiKey: 'AIzaSyB4WLCKb0UgVe-wd9GfK0o1Kt0gsyZtDiY',
-  authDomain: 'my-is-game.firebaseapp.com',
-  projectId: 'my-is-game',
-  storageBucket: 'my-is-game.firebasestorage.app',
-  messagingSenderId: '40143219842',
-  appId: '1:40143219842:web:6020320d45796f71a5189b',
-  measurementId: 'G-71LJF1YVVD'
-};
+export { firebaseConfig };
 
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// Initialize Firestore & Auth with the hardcoded Firebase configuration
-export const db = getFirestore(app);
+// Initialize Firestore & Auth using provisioned applet configuration and specific firestoreDatabaseId
+export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
 
 export enum OperationType {
