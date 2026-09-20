@@ -1,9 +1,26 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { LeaderboardEntry, OnlineUser, LiveScoreEvent, UserProfile } from '../types';
 
+const DEFAULT_LEADERBOARD: LeaderboardEntry[] = [
+  { id: "bot-1", name: "ดร.เคมีพิสดาร 🧪", avatar: "👨‍🔬", totalPoints: 12450, level: 18, wins: 45, rank: 1 },
+  { id: "bot-2", name: "น้องนุ่นรักตารางธาตุ ✨", avatar: "👩‍🎓", totalPoints: 9820, level: 14, wins: 34, rank: 2 },
+  { id: "bot-3", name: "บอสไอโซโทป ⚡", avatar: "🧙‍♂️", totalPoints: 8300, level: 12, wins: 28, rank: 3 },
+  { id: "bot-4", name: "คุณครูสมศรีเคมี 📚", avatar: "👩‍🏫", totalPoints: 6750, level: 10, wins: 21, rank: 4 },
+  { id: "bot-5", name: "เด็กสายวิทย์_007 🎯", avatar: "🧑‍💻", totalPoints: 5120, level: 8, wins: 15, rank: 5 },
+  { id: "bot-6", name: "แชมป์โอลิมปิกวิทย์ 🏆", avatar: "🧑‍🔬", totalPoints: 4300, level: 7, wins: 13, rank: 6 },
+  { id: "bot-7", name: "เจ้าหญิงนีออน 🎈", avatar: "👸", totalPoints: 3450, level: 5, wins: 9, rank: 7 }
+];
+
+const DEFAULT_ONLINE: OnlineUser[] = [
+  { id: "bot-1", name: "ดร.เคมีพิสดาร 🧪", avatar: "👨‍🔬", totalPoints: 12450, level: 18, status: "กำลังทำควิซมาราธอน 🧠", lastActive: Date.now(), isGuest: false },
+  { id: "bot-2", name: "น้องนุ่นรักตารางธาตุ ✨", avatar: "👩‍🎓", totalPoints: 9820, level: 14, status: "กำลังจัดเรียงตารางธาตุ 🧩", lastActive: Date.now(), isGuest: false },
+  { id: "bot-3", name: "บอสไอโซโทป ⚡", avatar: "🧙‍♂️", totalPoints: 8300, level: 12, status: "รอท้าดวล 1v1 ⚔️", lastActive: Date.now(), isGuest: false },
+  { id: "bot-5", name: "เด็กสายวิทย์_007 🎯", avatar: "🧑‍💻", totalPoints: 5120, level: 8, status: "กำลังจับคู่ธาตุ 🔗", lastActive: Date.now(), isGuest: false }
+];
+
 export function useRealtimeLeaderboard(user: UserProfile) {
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(DEFAULT_LEADERBOARD);
+  const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>(DEFAULT_ONLINE);
   const [latestEvent, setLatestEvent] = useState<LiveScoreEvent | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
@@ -13,24 +30,39 @@ export function useRealtimeLeaderboard(user: UserProfile) {
   const fetchLeaderboard = useCallback(async () => {
     try {
       const res = await fetch('/api/leaderboard');
+      if (!res.ok) throw new Error('Network response was not ok');
       const data = await res.json();
-      if (data.leaderboard) {
+      if (data.leaderboard && data.leaderboard.length > 0) {
         setLeaderboard(data.leaderboard);
       }
-    } catch (e) {
-      console.warn('Could not fetch leaderboard via REST', e);
+    } catch {
+      // Keep DEFAULT_LEADERBOARD merged with current user
+      setLeaderboard((prev) => {
+        const existing = prev.filter(e => e.id !== user.id);
+        const userEntry: LeaderboardEntry = {
+          id: user.id,
+          name: user.name,
+          avatar: user.avatar,
+          totalPoints: user.totalPoints,
+          level: user.level,
+          wins: user.wins
+        };
+        const combined = [...existing, userEntry].sort((a, b) => b.totalPoints - a.totalPoints);
+        return combined.map((item, idx) => ({ ...item, rank: idx + 1 }));
+      });
     }
-  }, []);
+  }, [user]);
 
   const fetchOnlineUsers = useCallback(async () => {
     try {
       const res = await fetch('/api/online-users');
+      if (!res.ok) throw new Error('Network response was not ok');
       const data = await res.json();
-      if (data.onlineUsers) {
+      if (data.onlineUsers && data.onlineUsers.length > 0) {
         setOnlineUsers(data.onlineUsers);
       }
-    } catch (e) {
-      console.warn('Could not fetch online users via REST', e);
+    } catch {
+      // Keep default online bots
     }
   }, []);
 

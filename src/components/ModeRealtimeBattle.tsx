@@ -1,8 +1,73 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { UserProfile, BattleRoomState } from '../types';
+import { UserProfile, BattleRoomState, BattleQuestion } from '../types';
 import confetti from 'canvas-confetti';
 import { soundManager } from '../utils/audio';
+import { ELEMENTS } from '../data/elements';
 import { Swords, Trophy, Clock, Zap, ArrowLeft, Flame, CheckCircle, XCircle, Users } from 'lucide-react';
+
+// Local generator for offline / GitHub Pages play
+function generateLocalDuelQuestions(count = 5): BattleQuestion[] {
+  const shuffled = [...ELEMENTS].sort(() => Math.random() - 0.5);
+  const questions: BattleQuestion[] = [];
+
+  for (let i = 0; i < Math.min(count, shuffled.length); i++) {
+    const el = shuffled[i];
+    const type = i % 3;
+
+    if (type === 0) {
+      const otherSymbols = ELEMENTS
+        .filter(e => e.symbol !== el.symbol)
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 3)
+        .map(e => e.symbol);
+      const options = [el.symbol, ...otherSymbols].sort(() => Math.random() - 0.5);
+      questions.push({
+        id: `q-${i}-${Date.now()}`,
+        question: `สัญลักษณ์ทางเคมีของ "${el.nameTH}" คือข้อใด?`,
+        options,
+        correctIndex: options.indexOf(el.symbol),
+        explanation: `${el.nameTH} มีสัญลักษณ์คือ ${el.symbol} (เลขอะตอม ${el.atomicNumber})`,
+        elementSymbol: el.symbol
+      });
+    } else if (type === 1) {
+      const otherNames = ELEMENTS
+        .filter(e => e.symbol !== el.symbol)
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 3)
+        .map(e => e.nameTH);
+      const options = [el.nameTH, ...otherNames].sort(() => Math.random() - 0.5);
+      questions.push({
+        id: `q-${i}-${Date.now()}`,
+        question: `สัญลักษณ์ธาตุ "${el.symbol}" คือธาตุใดในภาษาไทย?`,
+        options,
+        correctIndex: options.indexOf(el.nameTH),
+        explanation: `สัญลักษณ์ ${el.symbol} คือธาตุ ${el.nameTH}`,
+        elementSymbol: el.symbol
+      });
+    } else {
+      const correctText = `หมู่ ${el.group} คาบ ${el.period}`;
+      const fake1 = `หมู่ ${el.group === 1 ? 2 : el.group - 1} คาบ ${el.period}`;
+      const fake2 = `หมู่ ${el.group} คาบ ${el.period + 1}`;
+      const fake3 = `หมู่ ${el.group === 18 ? 17 : el.group + 1} คาบ ${Math.max(1, el.period - 1)}`;
+      const rawOptions = [correctText, fake1, fake2, fake3];
+      const uniqueOptions = Array.from(new Set(rawOptions));
+      while (uniqueOptions.length < 4) {
+        uniqueOptions.push(`หมู่ ${Math.floor(Math.random() * 18) + 1} คาบ ${Math.floor(Math.random() * 6) + 1}`);
+      }
+      const options = uniqueOptions.sort(() => Math.random() - 0.5);
+      questions.push({
+        id: `q-${i}-${Date.now()}`,
+        question: `ธาตุ "${el.nameTH} (${el.symbol})" อยู่ในหมู่และคาบใด?`,
+        options,
+        correctIndex: options.indexOf(correctText),
+        explanation: `${el.nameTH} อยู่ในหมู่ ${el.group} คาบที่ ${el.period}`,
+        elementSymbol: el.symbol
+      });
+    }
+  }
+
+  return questions;
+}
 
 interface Props {
   user: UserProfile;
@@ -81,6 +146,41 @@ export const ModeRealtimeBattle: React.FC<Props> = ({ user, onBackToMenu, onAddS
           user
         })
       );
+    } else {
+      // Offline / GitHub Pages fallback: match with a simulated chemist bot
+      setTimeout(() => {
+        const botNames = ['น้องนุ่นรักตารางธาตุ ✨', 'บอสไอโซโทป ⚡', 'ดร.เคมีพิสดาร 🧪', 'เด็กสายวิทย์_007 🎯'];
+        const randomBotName = botNames[Math.floor(Math.random() * botNames.length)];
+        const questions = generateLocalDuelQuestions(5);
+        const botId = `bot-${Date.now()}`;
+        setRoomState({
+          roomId: `local-${Date.now()}`,
+          status: 'playing',
+          players: {
+            [user.id]: {
+              userId: user.id,
+              name: user.name,
+              avatar: user.avatar,
+              score: 0,
+              combo: 0,
+              answers: []
+            },
+            [botId]: {
+              userId: botId,
+              name: randomBotName,
+              avatar: '🤖',
+              score: 0,
+              combo: 0,
+              answers: []
+            }
+          },
+          currentQuestionIndex: 0,
+          questions,
+          winnerId: null
+        });
+        soundManager.playBattleStart();
+        setMatchStatus('playing');
+      }, 1200);
     }
   };
 
@@ -140,6 +240,51 @@ export const ModeRealtimeBattle: React.FC<Props> = ({ user, onBackToMenu, onAddS
           timeSpentSec
         })
       );
+    } else {
+      // Local bot answer scoring simulation
+      const opponentBotId = Object.keys(roomState.players).find(id => id !== user.id);
+      const points = isCorrect ? Math.max(10, 20 - timeSpentSec) * 10 : 0;
+      const botCorrect = Math.random() > 0.35;
+      const botPoints = botCorrect ? Math.floor(Math.random() * 60 + 80) : 0;
+
+      setRoomState(prev => {
+        if (!prev) return null;
+        const myScore = (prev.players[user.id]?.score || 0) + points;
+        const myCombo = isCorrect ? (prev.players[user.id]?.combo || 0) + 1 : 0;
+        const botScore = (opponentBotId ? prev.players[opponentBotId]?.score || 0 : 0) + botPoints;
+        const isLastQ = currentQIndex + 1 >= prev.questions.length;
+
+        let winnerId: string | null = null;
+        if (isLastQ) {
+          if (myScore > botScore) winnerId = user.id;
+          else if (botScore > myScore) winnerId = opponentBotId || 'bot';
+          else winnerId = 'draw';
+        }
+
+        return {
+          ...prev,
+          status: isLastQ ? 'ended' : 'playing',
+          winnerId,
+          players: {
+            ...prev.players,
+            [user.id]: {
+              ...prev.players[user.id],
+              score: myScore,
+              combo: myCombo
+            },
+            ...(opponentBotId ? {
+              [opponentBotId]: {
+                ...prev.players[opponentBotId],
+                score: botScore
+              }
+            } : {})
+          }
+        };
+      });
+
+      if (currentQIndex + 1 >= roomState.questions.length) {
+        setTimeout(() => setMatchStatus('ended'), 1200);
+      }
     }
 
     // Delay next question
