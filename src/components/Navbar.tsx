@@ -1,6 +1,6 @@
 import React from 'react';
 import { UserProfile } from '../types';
-import { Trophy, Smartphone, Volume2, VolumeX, Sun, Moon, BarChart3, Music } from 'lucide-react';
+import { Trophy, Volume2, VolumeX, Sun, Moon, BarChart3, Music } from 'lucide-react';
 import { useAudio } from '../hooks/useAudio';
 
 interface Props {
@@ -9,7 +9,6 @@ interface Props {
   isConnected?: boolean;
   onOpenLeaderboard: () => void;
   onOpenAuth: () => void;
-  onOpenInstall: () => void;
   onOpenAudio: () => void;
   onOpenAnalytics: () => void;
   onOpenMusic?: () => void;
@@ -21,7 +20,6 @@ export const Navbar: React.FC<Props> = ({
   isConnected = true,
   onOpenLeaderboard,
   onOpenAuth,
-  onOpenInstall,
   onOpenAudio,
   onOpenAnalytics,
   onOpenMusic
@@ -129,20 +127,6 @@ export const Navbar: React.FC<Props> = ({
           >
             <BarChart3 className="h-3.5 w-3.5 text-violet-700 dark:text-violet-400" />
             <span className="hidden sm:inline">วิเคราะห์</span>
-          </button>
-
-          {/* PWA Install Button */}
-          <button
-            onClick={() => {
-              playClick();
-              onOpenInstall();
-            }}
-            title="ติดตั้งแอปลงมือถือ (PWA)"
-            className="flex items-center gap-1 py-1 px-2 rounded-xl bg-emerald-100 dark:bg-zinc-900 hover:bg-emerald-200 dark:hover:bg-zinc-800 border-2 border-slate-900 dark:border-zinc-800 text-emerald-900 dark:text-emerald-300 text-xs font-black shadow-[2px_2px_0px_#1e293b] dark:shadow-[2px_2px_0px_#27272a] transition active:translate-y-0.5 cursor-pointer"
-          >
-            <Smartphone className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" />
-            <span className="hidden sm:inline">ติดตั้งแอป</span>
-            <span className="sm:hidden">แอป</span>
           </button>
 
           {/* Leaderboard Button */}

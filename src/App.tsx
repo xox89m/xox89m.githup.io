@@ -10,7 +10,6 @@ import { ModeRealtimeBattle } from './components/ModeRealtimeBattle';
 import { ModePeriodicExplorer } from './components/ModePeriodicExplorer';
 import { LeaderboardModal } from './components/LeaderboardModal';
 import { AuthModal } from './components/AuthModal';
-import { PWAInstallModal } from './components/PWAInstallModal';
 import { AudioSettingsModal } from './components/AudioSettingsModal';
 import { AnalyticsModal } from './components/AnalyticsModal';
 import { MusicPlayer } from './components/MusicPlayer';
@@ -21,7 +20,6 @@ import {
   Sparkles, 
   WifiOff,
   Zap,
-  Smartphone,
   Trophy,
   LogIn,
   BarChart3,
@@ -45,7 +43,6 @@ export default function App() {
   const [activeScreen, setActiveScreen] = useState<'home' | 'quiz' | 'grid' | 'match' | 'battle' | 'explorer'>('home');
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
-  const [showInstall, setShowInstall] = useState(false);
   const [showAudioSettings, setShowAudioSettings] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showMusicPlayerModal, setShowMusicPlayerModal] = useState(false);
@@ -132,7 +129,6 @@ export default function App() {
         isConnected={isConnected}
         onOpenLeaderboard={() => setShowLeaderboard(true)}
         onOpenAuth={() => setShowAuth(true)}
-        onOpenInstall={() => setShowInstall(true)}
         onOpenAudio={() => setShowAudioSettings(true)}
         onOpenAnalytics={() => setShowAnalytics(true)}
         onOpenMusic={() => setShowMusicPlayerModal(true)}
@@ -460,13 +456,13 @@ export default function App() {
               <button
                 onClick={() => {
                   soundManager.playClick();
-                  setShowInstall(true);
+                  setShowAnalytics(true);
                 }}
-                className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-white dark:bg-zinc-950 hover:bg-slate-50 dark:hover:bg-zinc-900 border-2 border-slate-900 dark:border-zinc-800 shadow-[2px_2px_0px_#1e293b] dark:shadow-[2px_2px_0px_#27272a] text-center transition active:scale-98 cursor-pointer"
+                className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-violet-50 dark:bg-zinc-950 hover:bg-violet-100 dark:hover:bg-zinc-900 border-2 border-slate-900 dark:border-zinc-800 shadow-[2px_2px_0px_#1e293b] dark:shadow-[2px_2px_0px_#27272a] text-center transition active:scale-98 cursor-pointer"
               >
-                <Smartphone className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mb-1" />
-                <span className="text-[11px] font-black text-slate-900 dark:text-white">ติดตั้งแอป</span>
-                <span className="text-[9px] text-slate-500 dark:text-slate-400">PWA/APK</span>
+                <BarChart3 className="h-4 w-4 text-violet-600 dark:text-violet-400 mb-1" />
+                <span className="text-[11px] font-black text-slate-900 dark:text-white">วิเคราะห์</span>
+                <span className="text-[9px] text-slate-500 dark:text-slate-400">สถิติผู้เรียน</span>
               </button>
 
               <button
@@ -581,11 +577,6 @@ export default function App() {
         onLoginGoogle={loginWithGoogle}
         onLogout={logout}
         onUpdateProfile={updateProfile}
-      />
-
-      <PWAInstallModal
-        isOpen={showInstall}
-        onClose={() => setShowInstall(false)}
       />
 
       <AudioSettingsModal

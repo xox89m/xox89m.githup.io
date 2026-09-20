@@ -116,12 +116,25 @@ export async function trackAnswerEvent(params: {
   // Always save backup locally first
   saveBackupLocally(logPayload);
 
+  console.log('[Analytics:Firestore] 🚀 ยิงข้อมูลลง collection play_logs ใน Firestore ทันทีที่ตอบคำถาม:', {
+    logId: safeLogId,
+    mode: logPayload.gameMode,
+    questionId: logPayload.questionId,
+    elementSymbol: logPayload.elementSymbol,
+    isCorrect: logPayload.isCorrect,
+    answerTime: logPayload.answerTime,
+    sessionDuration: logPayload.sessionDuration,
+    timestamp: logPayload.timestamp,
+    fullPayload: logPayload
+  });
+
   // Send to Firestore in background
   try {
     const logDocRef = doc(db, 'play_logs', safeLogId);
     await setDoc(logDocRef, logPayload);
+    console.log(`[Analytics:Firestore] ✅ บันทึกลง Firestore collection play_logs สำเร็จ (ID: ${safeLogId})`);
   } catch (err) {
-    console.warn('Firestore play_logs write failed (will use local backup):', err);
+    console.error(`[Analytics:Firestore] ❌ บันทึกข้อมูลลง Firestore collection play_logs ไม่สำเร็จ:`, err);
     // Silent catch so it doesn't disturb gameplay, but log per skill
     try {
       handleFirestoreError(err, OperationType.WRITE, `play_logs/${safeLogId}`);
