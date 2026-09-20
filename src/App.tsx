@@ -492,6 +492,37 @@ export default function App() {
                 </div>
                 <ChevronRight className="h-5 w-5 text-slate-600 dark:text-slate-300 shrink-0" />
               </button>
+
+              {/* RATING & REVIEWS CARD (Directly below Explorer Encyclopedia) */}
+              <div
+                onClick={() => {
+                  soundManager.playClick();
+                  setShowRatingModal(true);
+                }}
+                className="w-full bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 dark:from-amber-600 dark:via-amber-700 dark:to-yellow-700 text-slate-950 dark:text-white border-2 border-slate-900 dark:border-zinc-700 rounded-3xl p-4 shadow-[4px_4px_0px_#1e293b] dark:shadow-[4px_4px_0px_#000000] flex items-center justify-between transition cursor-pointer hover:brightness-105 active:translate-y-0.5 select-none"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-amber-300 text-2xl border-2 border-slate-900 dark:border-zinc-700 shadow-sm shrink-0">
+                    ⭐
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-black text-base text-slate-950 dark:text-white">
+                        ให้คะแนนและรีวิวเกม
+                      </span>
+                      <span className="bg-slate-950 text-amber-300 text-[10px] font-black px-2 py-0.5 rounded-full border border-slate-900 dark:border-zinc-700">
+                        {reviewStats.averageRating.toFixed(1)} ★
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-900 dark:text-amber-100 font-bold mt-0.5">
+                      {reviewStats.totalReviews > 0
+                        ? `คะแนนเฉลี่ย ${reviewStats.averageRating.toFixed(1)} ดาว (${reviewStats.totalReviews} รีวิว) · แตะเพื่อให้ดาว`
+                        : 'แตะเพื่อให้คะแนนดาวและเขียนรีวิวส่งกำลังใจ!'}
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight className="h-5 w-5 text-slate-950/70 dark:text-white/80 shrink-0" />
+              </div>
             </div>
 
             {/* Quick Action Grid */}
@@ -527,12 +558,9 @@ export default function App() {
                 }}
                 className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-white dark:bg-zinc-950 hover:bg-slate-50 dark:hover:bg-zinc-900 border-2 border-slate-900 dark:border-zinc-800 shadow-[2px_2px_0px_#1e293b] dark:shadow-[2px_2px_0px_#27272a] text-center transition active:scale-98 cursor-pointer relative"
               >
-                <div className="flex items-center gap-1 mb-1">
-                  <LogIn className="h-4 w-4 text-blue-600 dark:text-cyan-400" />
-                  <span className="text-[10px] font-black text-amber-500">★ {reviewStats.averageRating.toFixed(1)}</span>
-                </div>
+                <LogIn className="h-4 w-4 text-blue-600 dark:text-cyan-400 mb-1" />
                 <span className="text-[11px] font-black text-slate-900 dark:text-white">{user.email ? 'โปรไฟล์' : 'เข้าสู่ระบบ'}</span>
-                <span className="text-[9px] text-slate-500 dark:text-slate-400">บัญชี & รีวิว</span>
+                <span className="text-[9px] text-slate-500 dark:text-slate-400">{user.email ? 'บัญชีผู้เล่น' : 'Google Sync'}</span>
               </button>
 
               <button

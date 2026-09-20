@@ -23,8 +23,10 @@ import {
   ChevronDown,
   ChevronUp,
   EyeOff,
-  Eye
+  Eye,
+  GripVertical
 } from 'lucide-react';
+import { motion } from 'motion/react';
 import { useMusic } from '../hooks/useMusic';
 import { musicStore, PlaylistItem, LYRICS_STARLOST, LYRICS_PERFECT_GOODBYE, LYRICS_PHOTOGRAPH_PURPEECH } from '../services/musicStore';
 import { loadCustomAudio, saveCustomAudio, deleteCustomAudio } from '../utils/audioStorage';
@@ -112,6 +114,8 @@ export const MusicPlayer: React.FC<Props> = ({
   // Time tracking refs to guarantee 100% accurate time display without freeze or drift
   const localElapsedRef = useRef<number>(currentTime);
   const lastSyncTimeRef = useRef<number>(Date.now());
+  const isDraggingRef = useRef<boolean>(false);
+  const dragHandleRef = useRef<HTMLDivElement | null>(null);
 
   // Load custom local audio from IndexedDB if stored
   useEffect(() => {
@@ -458,11 +462,36 @@ export const MusicPlayer: React.FC<Props> = ({
       {/* FLOATING BOTTOM MUSIC PLAYER BAR / COMPACT MINI BADGE                     */}
       {/* ========================================================================= */}
       {isBarHidden ? (
-        /* Mini floating widget when player bar is hidden */
-        <div className="fixed bottom-3 right-3 sm:right-6 z-40 animate-in fade-in slide-in-from-bottom-2">
-          <div className="flex items-center gap-1.5 bg-slate-900/95 dark:bg-black/95 text-white border-2 border-pink-500/70 rounded-full pl-2 pr-1.5 py-1 shadow-[3px_3px_0px_#0f172a] backdrop-blur-md">
+        /* Draggable mini floating widget when player bar is hidden */
+        <motion.div 
+          drag
+          dragMomentum={false}
+          dragElastic={0.15}
+          onDragStart={() => {
+            isDraggingRef.current = true;
+          }}
+          onDragEnd={() => {
+            // Keep isDragging true for a moment to swallow the click event from drag release
+            setTimeout(() => {
+              isDraggingRef.current = false;
+            }, 120);
+          }}
+          whileDrag={{ scale: 1.06, cursor: 'grabbing' }}
+          className="fixed bottom-4 right-4 z-40 touch-none select-none"
+        >
+          <div className="flex items-center gap-1.5 bg-slate-900/95 dark:bg-black/95 text-white border-2 border-pink-500/80 rounded-full pl-1.5 pr-2 py-1 shadow-[0_4px_20px_rgba(0,0,0,0.4),3px_3px_0px_#0f172a] backdrop-blur-md cursor-grab active:cursor-grabbing hover:border-pink-400 transition-colors">
+            {/* Visual Drag Handle Icon */}
+            <div 
+              className="text-pink-400/80 hover:text-pink-300 flex items-center justify-center pl-0.5 cursor-grab active:cursor-grabbing" 
+              title="ลากเพื่อย้ายตำแหน่ง (Drag to move)"
+            >
+              <GripVertical className="h-4 w-4" />
+            </div>
+
             <button
               onClick={() => {
+                // If user just dragged the widget, do not trigger opening modal
+                if (isDraggingRef.current) return;
                 soundManager.playClick();
                 onRequestOpenModal ? onRequestOpenModal() : null;
               }}
@@ -472,7 +501,7 @@ export const MusicPlayer: React.FC<Props> = ({
               <div className={`relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-purple-600 to-pink-500 text-white ${isPlaying ? 'animate-spin' : ''}`} style={{ animationDuration: '4s' }}>
                 <Disc3 className="h-4 w-4" />
               </div>
-              <div className="flex flex-col text-left">
+              <div className="flex flex-col text-left pointer-events-none">
                 <span className="text-[11px] font-black text-pink-200 max-w-[95px] sm:max-w-[130px] truncate leading-tight">
                   {currentTrack.title}
                 </span>
@@ -489,7 +518,7 @@ export const MusicPlayer: React.FC<Props> = ({
                 soundManager.playClick();
                 togglePlay();
               }}
-              className={`h-7 w-7 rounded-full flex items-center justify-center transition cursor-pointer ${
+              className={`h-7 w-7 rounded-full flex items-center justify-center transition cursor-pointer shrink-0 ${
                 isPlaying ? 'bg-pink-600 hover:bg-pink-700 text-white' : 'bg-emerald-500 hover:bg-emerald-600 text-slate-950'
               }`}
               title={isPlaying ? 'หยุดเล่น' : 'เล่นต่อ'}
@@ -504,13 +533,13 @@ export const MusicPlayer: React.FC<Props> = ({
                 soundManager.playClick();
                 toggleBarHidden();
               }}
-              className="h-7 w-7 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition cursor-pointer"
+              className="h-7 w-7 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition cursor-pointer shrink-0"
               title="แสดงแถบเพลงเต็ม"
             >
               <ChevronUp className="h-4 w-4" />
             </button>
           </div>
-        </div>
+        </motion.div>
       ) : (
         /* Full Floating Player Bar */
         <div className="fixed bottom-3 left-3 right-3 max-w-xl mx-auto z-40 animate-in fade-in slide-in-from-bottom-2">
