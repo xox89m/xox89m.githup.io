@@ -32,17 +32,27 @@ git push -u origin main
 
 ---
 
-## 🌐 วิธีเปิดเว็บเกมให้เล่นออนไลน์ฟรีด้วย GitHub Pages
+## 🌐 วิธีเปิดเว็บเกมให้เล่นออนไลน์ฟรีด้วย GitHub Pages (แก้ปัญหาหน้าจอสีขาว)
 
-โปรเจกต์นี้มีระบบอัตโนมัติ **GitHub Actions Workflow** (`.github/workflows/deploy.yml`) เตรียมไว้ให้แล้ว:
+> ⚠️ **สาเหตุที่เปิดเว็บแล้วเป็นหน้าจอสีขาว (Failed to load resource: src/main.tsx 404):**
+> เนื่องจาก GitHub Pages กำลังดึงไฟล์ต้นฉบับที่ยังไม่ได้คอมไพล์ (Unbundled source code) ไปรันตรงๆ บนเบราว์เซอร์ คุณสามารถแก้ไขให้ทำงานได้ทันทีด้วยวิธีใดวิธีหนึ่งด้านล่าง:
 
-1. นำโค้ดขึ้น GitHub Repository ของคุณตามขั้นตอนด้านบน
-2. บนหน้าเว็บ GitHub ไปที่แท็บ **Settings** ของ Repository นั้น
-3. เลือกเมนู **Pages** ที่แถบเมนูด้านซ้าย
-4. ในหัวข้อ **Build and deployment**:
+### วิธีที่ 1: ใช้โฟลเดอร์ `/docs` (ง่ายที่สุด ทำได้ทันทีในหน้าเว็บ GitHub)
+1. ไปที่หน้า GitHub Repository ของคุณ
+2. คลิกที่แท็บ **Settings** ➜ เลือกเมนู **Pages** ด้านซ้ายมือ
+3. ในหัวข้อ **Build and deployment**:
+   - **Source**: เลือก **Deploy from a branch**
+   - **Branch**: เลือก **main** (หรือ master) แล้วเปลี่ยนโฟลเดอร์จาก `/ (root)` เป็น **`/docs`**
+   - กด **Save**
+4. รอประมาณ 1-2 นาที รีเฟรชหน้าเว็บเกมก็จะแสดงผลและเล่นได้ทันที 100%!
+
+---
+
+### วิธีที่ 2: ใช้ GitHub Actions (อัตโนมัติ 100% ทุกครั้งที่ Push โค้ด)
+1. ไปที่แท็บ **Settings** ของ Repository ➜ เมนู **Pages**
+2. ในหัวข้อ **Build and deployment**:
    - ตรงช่อง **Source** ให้เปลี่ยนเป็น **GitHub Actions**
-5. เมื่อเลือกแล้ว GitHub จะรัน Workflow อัตโนมัติ และสร้างลิงก์สำหรับเข้าเล่นเกม เช่น:
-   `https://<YOUR_USERNAME>.github.io/<YOUR_REPOSITORY_NAME>/`
+3. ระบบจะรันการ Build และ Deploy ขึ้น GitHub Pages ให้โดยอัตโนมัติทุกครั้งที่อัปเดตโค้ด!
 
 ---
 

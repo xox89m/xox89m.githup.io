@@ -7,6 +7,7 @@
     "dev": "tsx server.ts",
     "build": "vite build && node scripts/build-apk.cjs && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
     "build:client": "vite build",
+    "build:docs": "vite build --outDir docs",
     "build:apk": "node scripts/build-apk.cjs --rebuild",
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist server.cjs",
