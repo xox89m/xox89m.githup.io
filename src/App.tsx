@@ -48,11 +48,17 @@ export default function App() {
   const [activeScreen, setActiveScreen] = useState<'home' | 'quiz' | 'grid' | 'match' | 'battle' | 'explorer'>('home');
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
+  const [authModalTab, setAuthModalTab] = useState<'account' | 'rating'>('account');
   const [showAudioSettings, setShowAudioSettings] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [showMusicPlayerModal, setShowMusicPlayerModal] = useState(false);
   const { currentTrack, isPlaying: isMusicPlaying, togglePlay: toggleMusicPlay } = useMusic();
+
+  const openAuthModal = (tab: 'account' | 'rating' = 'account') => {
+    setAuthModalTab(tab);
+    setShowAuth(true);
+  };
 
   const [reviewStats, setReviewStats] = useState<ReviewStats>({
     averageRating: 5.0,
@@ -151,11 +157,11 @@ export default function App() {
         onlineCount={onlineCount}
         isConnected={isConnected}
         onOpenLeaderboard={() => setShowLeaderboard(true)}
-        onOpenAuth={() => setShowAuth(true)}
+        onOpenAuth={(tab?: 'account' | 'rating') => openAuthModal(tab || 'account')}
         onOpenAudio={() => setShowAudioSettings(true)}
         onOpenAnalytics={() => setShowAnalytics(true)}
         onOpenMusic={() => setShowMusicPlayerModal(true)}
-        onOpenRating={() => setShowRatingModal(true)}
+        onOpenRating={() => openAuthModal('rating')}
         reviewStats={reviewStats}
       />
 
@@ -269,37 +275,6 @@ export default function App() {
                 </div>
               </div>
               <ChevronRight className="h-5 w-5 text-white/80 shrink-0" />
-            </div>
-
-            {/* RATING & REVIEWS PROMINENT HERO CARD */}
-            <div
-              onClick={() => {
-                soundManager.playClick();
-                setShowRatingModal(true);
-              }}
-              className="bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 dark:from-amber-600 dark:via-amber-700 dark:to-yellow-700 text-slate-950 dark:text-white border-2 border-slate-900 dark:border-zinc-700 rounded-3xl p-4 shadow-[4px_4px_0px_#1e293b] dark:shadow-[4px_4px_0px_#000000] flex items-center justify-between transition cursor-pointer hover:brightness-105 active:translate-y-0.5 select-none"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-slate-950 text-amber-400 dark:bg-black flex items-center justify-center text-xl shrink-0 border-2 border-slate-900 dark:border-zinc-700 shadow-sm">
-                  ⭐
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-black text-sm text-slate-950 dark:text-white">
-                      ให้คะแนนและรีวิวเกม (Rating & Reviews)
-                    </span>
-                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-950 text-amber-300 dark:bg-black">
-                      {reviewStats.averageRating.toFixed(1)} ★
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-900 dark:text-amber-100 mt-0.5 font-bold">
-                    {reviewStats.totalReviews > 0
-                      ? `คะแนนเฉลี่ย ${reviewStats.averageRating.toFixed(1)} ดาว (${reviewStats.totalReviews} รีวิว) · แตะเพื่อให้ดาว`
-                      : 'แตะเพื่อให้ดาวและเป็นคนแรกที่ส่งรีวิวเกม!'}
-                  </p>
-                </div>
-              </div>
-              <ChevronRight className="h-5 w-5 text-slate-900/70 dark:text-white/80 shrink-0" />
             </div>
 
             {/* Real-time Online Presence & Activity Bar */}
@@ -548,13 +523,16 @@ export default function App() {
               <button
                 onClick={() => {
                   soundManager.playClick();
-                  setShowAuth(true);
+                  openAuthModal('account');
                 }}
-                className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-white dark:bg-zinc-950 hover:bg-slate-50 dark:hover:bg-zinc-900 border-2 border-slate-900 dark:border-zinc-800 shadow-[2px_2px_0px_#1e293b] dark:shadow-[2px_2px_0px_#27272a] text-center transition active:scale-98 cursor-pointer"
+                className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-white dark:bg-zinc-950 hover:bg-slate-50 dark:hover:bg-zinc-900 border-2 border-slate-900 dark:border-zinc-800 shadow-[2px_2px_0px_#1e293b] dark:shadow-[2px_2px_0px_#27272a] text-center transition active:scale-98 cursor-pointer relative"
               >
-                <LogIn className="h-4 w-4 text-blue-600 dark:text-cyan-400 mb-1" />
-                <span className="text-[11px] font-black text-slate-900 dark:text-white">Google</span>
-                <span className="text-[9px] text-slate-500 dark:text-slate-400">{user.email ? 'โปรไฟล์' : 'เข้าสู่ระบบ'}</span>
+                <div className="flex items-center gap-1 mb-1">
+                  <LogIn className="h-4 w-4 text-blue-600 dark:text-cyan-400" />
+                  <span className="text-[10px] font-black text-amber-500">★ {reviewStats.averageRating.toFixed(1)}</span>
+                </div>
+                <span className="text-[11px] font-black text-slate-900 dark:text-white">{user.email ? 'โปรไฟล์' : 'เข้าสู่ระบบ'}</span>
+                <span className="text-[9px] text-slate-500 dark:text-slate-400">บัญชี & รีวิว</span>
               </button>
 
               <button
@@ -645,6 +623,7 @@ export default function App() {
         onLoginGoogle={loginWithGoogle}
         onLogout={logout}
         onUpdateProfile={updateProfile}
+        initialTab={authModalTab}
       />
 
       <AudioSettingsModal

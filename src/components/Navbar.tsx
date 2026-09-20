@@ -9,7 +9,7 @@ interface Props {
   onlineCount?: number;
   isConnected?: boolean;
   onOpenLeaderboard: () => void;
-  onOpenAuth: () => void;
+  onOpenAuth: (initialTab?: 'account' | 'rating') => void;
   onOpenAudio: () => void;
   onOpenAnalytics: () => void;
   onOpenMusic?: () => void;
@@ -138,23 +138,6 @@ export const Navbar: React.FC<Props> = ({
             <span className="hidden sm:inline">วิเคราะห์</span>
           </button>
 
-          {/* Rating & Review Button */}
-          {onOpenRating && (
-            <button
-              onClick={() => {
-                playClick();
-                onOpenRating();
-              }}
-              title={`ให้คะแนนและรีวิวเกม (${reviewStats ? reviewStats.averageRating.toFixed(1) + ' ★' : 'รีวิว'})`}
-              className="flex items-center gap-1 py-1 px-2 rounded-xl bg-amber-100 dark:bg-amber-950/80 hover:bg-amber-200 dark:hover:bg-amber-900/60 border-2 border-slate-900 dark:border-zinc-800 text-amber-950 dark:text-amber-200 text-xs font-black shadow-[2px_2px_0px_#1e293b] dark:shadow-[2px_2px_0px_#27272a] transition active:translate-y-0.5 cursor-pointer"
-            >
-              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-600 dark:text-amber-400" />
-              <span className="text-[11px] font-black">
-                {reviewStats && reviewStats.totalReviews > 0 ? `${reviewStats.averageRating.toFixed(1)}★` : 'รีวิว'}
-              </span>
-            </button>
-          )}
-
           {/* Leaderboard Button */}
           <button
             onClick={() => {
@@ -168,20 +151,35 @@ export const Navbar: React.FC<Props> = ({
             <span className="hidden sm:inline">{user.totalPoints.toLocaleString()}</span>
           </button>
 
-          {/* User Profile Button */}
-          <button
-            onClick={() => {
-              playClick();
-              onOpenAuth();
-            }}
-            title="โปรไฟล์ผู้เล่น & Google Sign-In"
-            className="flex items-center gap-1 py-1 px-2 rounded-xl bg-slate-100 dark:bg-zinc-900 hover:bg-slate-200 dark:hover:bg-zinc-800 border-2 border-slate-900 dark:border-zinc-800 text-slate-800 dark:text-slate-200 text-xs font-black shadow-[2px_2px_0px_#1e293b] dark:shadow-[2px_2px_0px_#27272a] transition active:translate-y-0.5 cursor-pointer"
-          >
-            <span className="text-sm">{user.avatar}</span>
-            <span className="max-w-[55px] truncate text-[11px] hidden sm:inline">
-              {user.name}
-            </span>
-          </button>
+          {/* User Profile & Login Button with Integrated Rating Badge */}
+          <div className="flex items-center shadow-[2px_2px_0px_#1e293b] dark:shadow-[2px_2px_0px_#27272a] rounded-xl border-2 border-slate-900 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900">
+            <button
+              onClick={() => {
+                playClick();
+                onOpenAuth('account');
+              }}
+              title={user.isGuest ? 'เข้าสู่ระบบ / จัดการโปรไฟล์' : `โปรไฟล์ผู้เล่น: ${user.name}`}
+              className="flex items-center gap-1 py-1 px-2 bg-slate-100 dark:bg-zinc-900 hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-800 dark:text-slate-200 text-xs font-black transition active:translate-y-0.5 cursor-pointer"
+            >
+              <span className="text-sm">{user.avatar}</span>
+              <span className="max-w-[65px] truncate text-[11px]">
+                {user.isGuest ? 'ล็อคอิน' : user.name}
+              </span>
+            </button>
+            <button
+              onClick={() => {
+                playClick();
+                onOpenAuth('rating');
+              }}
+              title={`ให้คะแนนและรีวิวเกม (${reviewStats && reviewStats.totalReviews > 0 ? reviewStats.averageRating.toFixed(1) + ' ★' : 'แตะเพื่อให้ดาว'})`}
+              className="flex items-center gap-0.5 py-1 px-1.5 border-l border-slate-900 dark:border-zinc-800 bg-amber-400 hover:bg-amber-500 dark:bg-amber-500 dark:hover:bg-amber-600 text-slate-950 text-xs font-black transition active:translate-y-0.5 cursor-pointer"
+            >
+              <Star className="h-3 w-3 fill-slate-950 text-slate-950" />
+              <span className="text-[11px] font-black">
+                {reviewStats && reviewStats.totalReviews > 0 ? `${reviewStats.averageRating.toFixed(1)}★` : 'รีวิว'}
+              </span>
+            </button>
+          </div>
         </div>
       </div>
     </header>
