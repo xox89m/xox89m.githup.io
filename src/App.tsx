@@ -221,13 +221,13 @@ export default function App() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-black text-sm text-white">ระบบวิเคราะห์ข้อมูลผู้เล่น (Analytics)</span>
-                    <span className="text-[10px] font-black px-2 py-0.2 rounded-full bg-amber-300 text-amber-950">
-                      Firebase
+                    <span className="font-black text-sm text-white">แดชบอร์ดวิเคราะห์ผู้เรียน (Admin Dashboard)</span>
+                    <span className="text-[10px] font-black px-2 py-0.2 rounded-full bg-emerald-300 text-emerald-950">
+                      Live Sync
                     </span>
                   </div>
                   <p className="text-[11px] text-purple-100 mt-0.5">
-                    ตรวจอัตราตอบถูก 10 นาทีแรก vs. หลังจากนั้น และแนวโน้มพัฒนาการของผู้เรียน
+                    ดูกราฟ Pie Chart, Bar Chart เปรียบเทียบพัฒนาการ 10 นาทีแรก และธาตุที่ตอบผิดบ่อย
                   </p>
                 </div>
               </div>

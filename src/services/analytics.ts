@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { collection, doc, setDoc, getDocs, query, limit, onSnapshot } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 
 export interface PlayLogEvent {
@@ -169,9 +169,45 @@ export async function fetchAllPlayLogs(maxLogs: number = 1000): Promise<PlayLogE
   return getLocalBackupLogs();
 }
 
+/**
+ * Subscribe to Firestore play_logs collection in real-time
+ */
+export function subscribePlayLogs(callback: (logs: PlayLogEvent[]) => void, maxLogs: number = 1000): () => void {
+  try {
+    const logsRef = collection(db, 'play_logs');
+    const q = query(logsRef, limit(maxLogs));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const remoteLogs: PlayLogEvent[] = [];
+      snapshot.forEach(d => {
+        remoteLogs.push({ id: d.id, ...(d.data() as PlayLogEvent) });
+      });
+      if (remoteLogs.length > 0) {
+        callback(remoteLogs);
+      } else {
+        callback(getLocalBackupLogs());
+      }
+    }, (err) => {
+      console.warn('subscribePlayLogs error:', err);
+      callback(getLocalBackupLogs());
+    });
+    return unsubscribe;
+  } catch (e) {
+    console.warn('Failed to setup snapshot listener:', e);
+    callback(getLocalBackupLogs());
+    return () => {};
+  }
+}
+
+export interface MistakenElementStat {
+  symbol: string;
+  count: number;
+  percentage: number;
+}
+
 export interface AnalyticsSummary {
   totalAnswered: number;
   totalCorrect: number;
+  totalWrong: number;
   overallAccuracy: number;
   first10MinTotal: number;
   first10MinCorrect: number;
@@ -182,6 +218,40 @@ export interface AnalyticsSummary {
   accuracyTrendDiff: number; // positive = improved after 10 mins
   avgAnswerTime: number;
   modeBreakdown: Record<string, { total: number; correct: number; accuracy: number }>;
+  topMistakenElements: MistakenElementStat[];
+}
+
+export interface UserSummaryItem {
+  userId: string;
+  total: number;
+  correct: number;
+  accuracy: number;
+}
+
+/**
+ * Extract unique users from logs with basic stats
+ */
+export function getUniqueUsers(logs: PlayLogEvent[]): UserSummaryItem[] {
+  const map = new Map<string, { total: number; correct: number }>();
+  for (const log of logs) {
+    const uid = log.userId || 'anonymous';
+    const current = map.get(uid) || { total: 0, correct: 0 };
+    current.total++;
+    if (log.isCorrect) current.correct++;
+    map.set(uid, current);
+  }
+
+  const result: UserSummaryItem[] = [];
+  map.forEach((val, userId) => {
+    result.push({
+      userId,
+      total: val.total,
+      correct: val.correct,
+      accuracy: val.total > 0 ? Math.round((val.correct / val.total) * 100) : 0
+    });
+  });
+
+  return result.sort((a, b) => b.total - a.total);
 }
 
 /**
@@ -193,6 +263,7 @@ export function computeAnalyticsSummary(logs: PlayLogEvent[]): AnalyticsSummary 
     return {
       totalAnswered: 0,
       totalCorrect: 0,
+      totalWrong: 0,
       overallAccuracy: 0,
       first10MinTotal: 0,
       first10MinCorrect: 0,
@@ -202,7 +273,8 @@ export function computeAnalyticsSummary(logs: PlayLogEvent[]): AnalyticsSummary 
       after10MinAccuracy: 0,
       accuracyTrendDiff: 0,
       avgAnswerTime: 0,
-      modeBreakdown: {}
+      modeBreakdown: {},
+      topMistakenElements: []
     };
   }
 
@@ -216,9 +288,25 @@ export function computeAnalyticsSummary(logs: PlayLogEvent[]): AnalyticsSummary 
   let after10Correct = 0;
 
   const modeBreakdown: Record<string, { total: number; correct: number; accuracy: number }> = {};
+  const mistakenElementCounts: Record<string, number> = {};
+  let totalMistakes = 0;
 
   for (const log of logs) {
-    if (log.isCorrect) totalCorrect++;
+    if (log.isCorrect) {
+      totalCorrect++;
+    } else {
+      totalMistakes++;
+      // Determine element symbol
+      let sym = log.elementSymbol;
+      if (!sym && log.questionId) {
+        // Try extracting symbol from questionId if like "sym_H" or similar
+        const match = log.questionId.match(/([A-Z][a-z]?)$/);
+        if (match) sym = match[1];
+      }
+      if (sym) {
+        mistakenElementCounts[sym] = (mistakenElementCounts[sym] || 0) + 1;
+      }
+    }
     totalTime += (log.answerTime || 0);
 
     // 10 minutes = 600 seconds
@@ -249,10 +337,22 @@ export function computeAnalyticsSummary(logs: PlayLogEvent[]): AnalyticsSummary 
   const overallAccuracy = Math.round((totalCorrect / total) * 100);
   const avgAnswerTime = Math.round((totalTime / total) * 10) / 10;
   const accuracyTrendDiff = after10Total > 0 && first10Total > 0 ? after10Accuracy - first10Accuracy : 0;
+  const totalWrong = total - totalCorrect;
+
+  // Top mistaken elements sorted by count descending
+  const topMistakenElements: MistakenElementStat[] = Object.entries(mistakenElementCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([symbol, count]) => ({
+      symbol,
+      count,
+      percentage: totalMistakes > 0 ? Math.round((count / totalMistakes) * 100) : 0
+    }));
 
   return {
     totalAnswered: total,
     totalCorrect,
+    totalWrong,
     overallAccuracy,
     first10MinTotal: first10Total,
     first10MinCorrect: first10Correct,
@@ -262,7 +362,8 @@ export function computeAnalyticsSummary(logs: PlayLogEvent[]): AnalyticsSummary 
     after10MinAccuracy: after10Accuracy,
     accuracyTrendDiff,
     avgAnswerTime,
-    modeBreakdown
+    modeBreakdown,
+    topMistakenElements
   };
 }
 
