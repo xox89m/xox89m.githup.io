@@ -38,6 +38,7 @@ interface Props {
   isOpenModal?: boolean;
   onCloseModal?: () => void;
   onRequestOpenModal?: () => void;
+  hideFloatingBar?: boolean;
 }
 
 function formatTime(seconds: number): string {
@@ -51,7 +52,8 @@ export const MusicPlayer: React.FC<Props> = ({
   isGameActive = false,
   isOpenModal = false,
   onCloseModal,
-  onRequestOpenModal
+  onRequestOpenModal,
+  hideFloatingBar = false
 }) => {
   const {
     playlist,
@@ -522,7 +524,8 @@ export const MusicPlayer: React.FC<Props> = ({
       {/* ========================================================================= */}
       {/* FLOATING BOTTOM MUSIC PLAYER BAR / COMPACT MINI BADGE                     */}
       {/* ========================================================================= */}
-      {isBarHidden ? (
+      {!hideFloatingBar && (
+        isBarHidden ? (
         /* Draggable mini floating widget when player bar is hidden */
         <motion.div 
           drag
@@ -765,7 +768,7 @@ export const MusicPlayer: React.FC<Props> = ({
             )}
           </div>
         </div>
-      )}
+      ))}
 
       {/* ========================================================================= */}
       {/* PLAYLIST & MUSIC CONTROLLER FULL MODAL / DRAWER                           */}

@@ -125,21 +125,44 @@ export const LYRICS_PHOTOGRAPH_PURPEECH: LyricLine[] = [
   { time: 257.0, text: 'บทกวีแห่งรักที่เราได้เขียนเอง ซ่อนเก็บไว้ให้เป็นดั่งวันวาน...' }
 ];
 
+export const LYRICS_HALLEY_COMET: LyricLine[] = [
+  { time: 0, text: '🎵 ดนตรีเปิดเพลง...' },
+  { time: 13.0, text: 'มีคนบอกไว้ถ้าเราได้ขอพร กับดวงดาวที่พาดผ่านฟ้าไกล' },
+  { time: 26.0, text: 'คำอธิษฐานนั้นจะกลายเป็นจริง ไม่ว่ามันจะยากเย็นสักเท่าไร' },
+  { time: 38.0, text: 'แต่ดาวดวงนั้นจะมาแค่หนึ่งครั้ง ในช่วงเวลาหนึ่งชีวิตคน' },
+  { time: 51.0, text: 'เจ็ดสิบห้าปีถึงจะเวียนวน กลับมาให้เราได้มองเห็นมัน' },
+  { time: 64.0, text: '🌟 [ท่อนฮุก]' },
+  { time: 65.0, text: 'อยากขอให้เธอนั้นอยู่ตรงนี้ อยู่เคียงข้างกันในทุกนาที' },
+  { time: 76.5, text: 'จนถึงวันที่ดาวหางฮัลเลย์ พาดผ่านฟ้าอีกครั้งในวันที่เราแก่ชรา' },
+  { time: 89.0, text: 'มีลูกมีหลานนั่งล้อมรอบกาย มองดูท้องฟ้ายามค่ำคืนด้วยกัน' },
+  { time: 101.5, text: 'ให้ความรักของเรายาวนาน ตราบจนชั่วนิรันดร์...' },
+  { time: 114.0, text: 'หากในวันนั้นไม่มีเธอข้างกาย ดาวดวงไหนก็คงไม่มีความหมาย' },
+  { time: 127.0, text: 'สิ่งที่สวยงามที่สุดในชีวิตฉัน คือการได้มีเธออยู่ร่วมทาง' },
+  { time: 139.5, text: '🌟 [ท่อนฮุก 2]' },
+  { time: 140.5, text: 'อยากขอให้เธอนั้นอยู่ตรงนี้ อยู่เคียงข้างกันในทุกนาที' },
+  { time: 152.0, text: 'จนถึงวันที่ดาวหางฮัลเลย์ พาดผ่านฟ้าอีกครั้งในวันที่เราแก่ชรา' },
+  { time: 164.5, text: 'มีลูกมีหลานนั่งล้อมรอบกาย มองดูท้องฟ้ายามค่ำคืนด้วยกัน' },
+  { time: 177.0, text: 'ให้ความรักของเรายาวนาน ตราบจนชั่วนิรันดร์...' },
+  { time: 202.0, text: 'ให้รักของเราเป็นดั่งดาวหาง ที่ส่องประกายข้ามกาลเวลา' },
+  { time: 215.0, text: 'ตราบจนฟ้าดินสลาย...' }
+];
+
 export const DEFAULT_PLAYLIST: PlaylistItem[] = [
   {
     id: 'halley_comet_fellow',
     title: 'ดาวหางฮัลเลย์ (Halley\'s Comet)',
     artist: 'fellow fellow',
     type: 'youtube',
-    src: 'oZ4Yd8n39cE',
-    duration: 254
+    src: 'WtcKJtwMD2E',
+    duration: 254,
+    lyrics: LYRICS_HALLEY_COMET
   },
   {
     id: 'ping_nont_tanont',
     title: 'พิง (เพลงประกอบละครกระเช้าสีดา)',
     artist: 'NONT TANONT',
     type: 'youtube',
-    src: '43Z3zEaeVzI',
+    src: '-tCPuOIeSHo',
     duration: 260
   },
   {
@@ -147,7 +170,7 @@ export const DEFAULT_PLAYLIST: PlaylistItem[] = [
     title: 'ลืมไปแล้วว่าลืมยังไง (Fade)',
     artist: 'Jeff Satur',
     type: 'youtube',
-    src: '3L6sXg65a6s',
+    src: '6f5sozKp0R0',
     duration: 236
   },
   {
@@ -244,8 +267,9 @@ class MusicStoreService {
         const customTracks: PlaylistItem[] = JSON.parse(customStr);
         if (Array.isArray(customTracks)) {
           // Filter out any Chemistry lofi tracks and stale/expired blob URLs that can't be played after refresh
+          const defaultIds = new Set(DEFAULT_PLAYLIST.map(d => d.id));
           const filteredCustom = customTracks
-            .filter(t => t.id !== 'lofi_chemistry_beats' && !t.title.toLowerCase().includes('chemistry lofi'))
+            .filter(t => !defaultIds.has(t.id) && t.id !== 'lofi_chemistry_beats' && !t.title.toLowerCase().includes('chemistry lofi'))
             .map(t => {
               // If it's a blob url from previous session, keep the track definition but mark src empty so it can be restored from IndexedDB
               if (t.src && t.src.startsWith('blob:')) {

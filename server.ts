@@ -27,20 +27,35 @@ if (!fs.existsSync(DATA_DIR)) {
 }
 
 function loadInitialLeaderboard(): LeaderboardEntry[] {
+  const bossBot: LeaderboardEntry = {
+    id: "bot-boss-3-1",
+    name: "บอส3/1",
+    avatar: "👾",
+    totalPoints: 1000,
+    level: 3,
+    wins: 5
+  };
+
   try {
     if (fs.existsSync(LEADERBOARD_FILE)) {
       const data = JSON.parse(fs.readFileSync(LEADERBOARD_FILE, "utf-8"));
-      if (Array.isArray(data)) return data;
+      if (Array.isArray(data)) {
+        // Filter out old deleted bots
+        const filtered = data.filter(entry => 
+          !entry.id.startsWith("player-seed-") &&
+          !["ดร.เคมีพิสดาร 🧪", "น้องนุ่นรักตารางธาตุ ✨", "บอสไอโซโทป ⚡", "เด็กสายวิทย์_007 🎯"].includes(entry.name)
+        );
+        // Ensure บอส3/1 exists
+        if (!filtered.some(e => e.id === "bot-boss-3-1" || e.name === "บอส3/1")) {
+          filtered.push(bossBot);
+        }
+        return filtered;
+      }
     }
   } catch (e) {
     console.warn("Could not load persisted leaderboard:", e);
   }
-  // Starting seed with real chemistry scholars if brand new
-  return [
-    { id: "player-seed-1", name: "ดร.เคมีพิสดาร 🧪", avatar: "👨‍🔬", totalPoints: 1250, level: 3, wins: 4 },
-    { id: "player-seed-2", name: "น้องนุ่นรักตารางธาตุ ✨", avatar: "👩‍🎓", totalPoints: 980, level: 2, wins: 3 },
-    { id: "player-seed-3", name: "บอสไอโซโทป ⚡", avatar: "🧙‍♂️", totalPoints: 750, level: 2, wins: 2 }
-  ];
+  return [bossBot];
 }
 
 function loadInitialUsers(): Map<string, UserProfile> {
@@ -575,14 +590,8 @@ wss.on("connection", (ws: WebSocket) => {
                 const roomId = `room-bot-${Date.now()}`;
                 boundRoomId = roomId;
 
-                const botNames = [
-                  { name: "ดร.เคมีพิสดาร 🧪", avatar: "👨‍🔬" },
-                  { name: "น้องนุ่นรักตารางธาตุ ✨", avatar: "👩‍🎓" },
-                  { name: "บอสไอโซโทป ⚡", avatar: "🧙‍♂️" },
-                  { name: "เด็กสายวิทย์_007 🎯", avatar: "🧑‍💻" }
-                ];
-                const bot = botNames[Math.floor(Math.random() * botNames.length)];
-                const botId = `bot-${Date.now()}`;
+                const bot = { name: "บอส3/1", avatar: "👾" };
+                const botId = `bot-boss-3-1`;
 
                 const questions = generateDuelQuestions(5);
                 const room: BattleRoom = {

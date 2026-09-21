@@ -150,10 +150,9 @@ export const ModeRealtimeBattle: React.FC<Props> = ({ user, onBackToMenu, onAddS
     } else {
       // Offline / GitHub Pages fallback: match with a simulated chemist bot
       setTimeout(() => {
-        const botNames = ['น้องนุ่นรักตารางธาตุ ✨', 'บอสไอโซโทป ⚡', 'ดร.เคมีพิสดาร 🧪', 'เด็กสายวิทย์_007 🎯'];
-        const randomBotName = botNames[Math.floor(Math.random() * botNames.length)];
+        const randomBotName = 'บอส3/1';
         const questions = generateLocalDuelQuestions(5);
-        const botId = `bot-${Date.now()}`;
+        const botId = `bot-boss-3-1`;
         setRoomState({
           roomId: `local-${Date.now()}`,
           status: 'playing',
@@ -169,7 +168,7 @@ export const ModeRealtimeBattle: React.FC<Props> = ({ user, onBackToMenu, onAddS
             [botId]: {
               userId: botId,
               name: randomBotName,
-              avatar: '🤖',
+              avatar: '👾',
               score: 0,
               combo: 0,
               answers: []

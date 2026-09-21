@@ -9,33 +9,13 @@ const LOCAL_REVIEWS_STORAGE_KEY = 'chem_game_reviews_cache';
 export const DEFAULT_COMMUNITY_REVIEWS: Review[] = [
   {
     id: 'seed-1',
-    userId: 'chem_enthusiast_99',
-    userName: 'ดร.เคมีพิสดาร 🧪',
-    userAvatar: '👨‍🔬',
+    userId: 'boss_3_1_id',
+    userName: 'บอส3/1 👾',
+    userAvatar: '👾',
     rating: 5,
-    comment: 'เกมออกแบบดีมากครับ สนุกและช่วยจำสัญลักษณ์ธาตุกับเลขอะตอมได้แม่นยำขึ้นมาก แนะนำเลย!',
+    comment: 'ข้าคือบอส3/1! ใครคิดว่าแม่นตารางธาตุแน่จริงมาท้าดวล 1v1 ในห้องประลองได้เลย!',
     timestamp: new Date(Date.now() - 3600000 * 4).toISOString(),
     createdAt: new Date(Date.now() - 3600000 * 4).toISOString()
-  },
-  {
-    id: 'seed-2',
-    userId: 'noon_chem_lover',
-    userName: 'น้องนุ่นรักตารางธาตุ ✨',
-    userAvatar: '👩‍🎓',
-    rating: 5,
-    comment: 'โหมดดวล 1v1 สนุกตื่นเต้นมาก มีเพลงประกอบเพราะๆ และเอฟเฟกต์เสียงน่ารัก ให้ 5 ดาวเต็มเลยค่ะ ⭐⭐⭐⭐⭐',
-    timestamp: new Date(Date.now() - 3600000 * 12).toISOString(),
-    createdAt: new Date(Date.now() - 3600000 * 12).toISOString()
-  },
-  {
-    id: 'seed-3',
-    userId: 'isotope_boss',
-    userName: 'บอสไอโซโทป ⚡',
-    userAvatar: '🧙‍♂️',
-    rating: 5,
-    comment: 'ตารางธาตุสวยงามมาก มีฟีเจอร์ครบทั้งเสียงดนตรี วิเคราะห์สถิติ และแข่งกับผู้เล่นอื่นแบบสดๆ',
-    timestamp: new Date(Date.now() - 3600000 * 24).toISOString(),
-    createdAt: new Date(Date.now() - 3600000 * 24).toISOString()
   },
   {
     id: 'seed-4',
@@ -46,16 +26,6 @@ export const DEFAULT_COMMUNITY_REVIEWS: Review[] = [
     comment: 'นำไปใช้เป็นสื่อการสอนในห้องเรียนได้ดีเยี่ยม นักเรียนแย่งกันตอบและสนใจวิชาเคมีมากขึ้นเยอะเลยค่ะ',
     timestamp: new Date(Date.now() - 3600000 * 48).toISOString(),
     createdAt: new Date(Date.now() - 3600000 * 48).toISOString()
-  },
-  {
-    id: 'seed-5',
-    userId: 'gamer_sci_007',
-    userName: 'เด็กสายวิทย์_007 🎯',
-    userAvatar: '🧑‍💻',
-    rating: 4,
-    comment: 'สนุกมาก ระบบลื่นไหล เล่นเพลินจนลืมเวลาเลยครับ!',
-    timestamp: new Date(Date.now() - 3600000 * 72).toISOString(),
-    createdAt: new Date(Date.now() - 3600000 * 72).toISOString()
   }
 ];
 

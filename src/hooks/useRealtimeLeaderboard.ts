@@ -2,9 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { LeaderboardEntry, OnlineUser, LiveScoreEvent, UserProfile } from '../types';
 
 const DEFAULT_LEADERBOARD: LeaderboardEntry[] = [
-  { id: "player-seed-1", name: "ดร.เคมีพิสดาร 🧪", avatar: "👨‍🔬", totalPoints: 1250, level: 3, wins: 4, rank: 1 },
-  { id: "player-seed-2", name: "น้องนุ่นรักตารางธาตุ ✨", avatar: "👩‍🎓", totalPoints: 980, level: 2, wins: 3, rank: 2 },
-  { id: "player-seed-3", name: "บอสไอโซโทป ⚡", avatar: "🧙‍♂️", totalPoints: 750, level: 2, wins: 2, rank: 3 }
+  { id: "bot-boss-3-1", name: "บอส3/1", avatar: "👾", totalPoints: 1000, level: 3, wins: 5, rank: 1 }
 ];
 
 const DEFAULT_ONLINE: OnlineUser[] = [];

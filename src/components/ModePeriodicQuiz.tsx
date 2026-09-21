@@ -469,8 +469,8 @@ export const ModePeriodicQuiz: React.FC<Props> = ({
               </div>
             </div>
 
-            {/* Multiple Choice Options */}
-            <div className="grid grid-cols-1 gap-2.5 pt-2">
+            {/* Multiple Choice Options - 2x2 Compact Zero-Scroll Grid */}
+            <div className="grid grid-cols-2 gap-2 pt-1">
               {currentQ.options.map((opt, idx) => {
                 const isSelected = selectedOption === idx;
                 const isCorrect = idx === currentQ.correctIndex;
@@ -492,20 +492,20 @@ export const ModePeriodicQuiz: React.FC<Props> = ({
                     type="button"
                     disabled={isAnswered}
                     onClick={() => handleSelectOption(idx)}
-                    className={`w-full p-3 rounded-2xl border-2 transition flex items-center justify-between text-left cursor-pointer ${btnStyle}`}
+                    className={`w-full p-2.5 sm:p-3 rounded-2xl border-2 transition flex items-center justify-between text-left cursor-pointer active:scale-98 ${btnStyle}`}
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 font-black text-xs text-slate-700 dark:text-slate-200">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-lg bg-white dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 font-black text-xs text-slate-700 dark:text-slate-200">
                         {String.fromCharCode(65 + idx)}
                       </span>
-                      <span className="text-sm font-bold">{opt}</span>
+                      <span className="text-xs sm:text-sm font-bold truncate">{opt}</span>
                     </div>
 
                     {isAnswered && isCorrect && (
-                      <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 ml-1" />
                     )}
                     {isAnswered && isSelected && !isCorrect && (
-                      <XCircle className="h-5 w-5 text-rose-600 dark:text-rose-400 shrink-0" />
+                      <XCircle className="h-4 w-4 text-rose-600 dark:text-rose-400 shrink-0 ml-1" />
                     )}
                   </button>
                 );
