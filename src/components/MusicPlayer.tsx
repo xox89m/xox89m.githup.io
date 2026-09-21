@@ -24,7 +24,8 @@ import {
   ChevronUp,
   EyeOff,
   Eye,
-  GripVertical
+  GripVertical,
+  AlertCircle
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useMusic } from '../hooks/useMusic';
@@ -104,6 +105,7 @@ export const MusicPlayer: React.FC<Props> = ({
   const [inputArtist, setInputArtist] = useState<string>('');
   const [addError, setAddError] = useState<string | null>(null);
   const [addSuccess, setAddSuccess] = useState<string | null>(null);
+  const [audioPlaybackError, setAudioPlaybackError] = useState<string | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const ytIframeRef = useRef<HTMLIFrameElement | null>(null);
@@ -119,18 +121,34 @@ export const MusicPlayer: React.FC<Props> = ({
 
   // Load custom local audio from IndexedDB if stored
   useEffect(() => {
+    // Scan all tracks in playlist that need blob reconstruction from IndexedDB
+    playlist.forEach(track => {
+      if (track.type === 'audio' && (!track.src || track.src.startsWith('blob:'))) {
+        loadCustomAudio(track.id).then(res => {
+          if (res) {
+            const url = URL.createObjectURL(res.blob);
+            musicStore.updateTrackSrc(track.id, url);
+          }
+        });
+      }
+    });
+
+    // Also check default offline audio slot
     loadCustomAudio().then(res => {
       if (res) {
         const url = URL.createObjectURL(res.blob);
         const exists = playlist.some(t => t.id === 'stored_offline_audio');
         if (!exists) {
           addCustomTrack({
+            id: 'stored_offline_audio',
             title: res.name || 'ไฟล์เพลงของฉัน (ออฟไลน์)',
             artist: 'ผู้เล่นอัปโหลด',
             type: 'audio',
             src: url,
             duration: 240
           });
+        } else {
+          musicStore.updateTrackSrc('stored_offline_audio', url);
         }
       }
     });
@@ -286,7 +304,21 @@ export const MusicPlayer: React.FC<Props> = ({
       if (audioRef.current) {
         audioRef.current.volume = isMuted ? 0 : volume;
         if (isPlaying) {
-          audioRef.current.play().catch(() => {});
+          const playPromise = audioRef.current.play();
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => {
+                setAudioPlaybackError(null);
+              })
+              .catch((err) => {
+                console.warn('Audio play request blocked or failed:', err);
+                if (err.name === 'NotAllowedError') {
+                  setAudioPlaybackError('เบราว์เซอร์บล็อกการเล่นเพลงอัตโนมัติ กรุณากดปุ่ม "เล่น" เพื่อเปิดเสียง');
+                } else if (!currentTrack.src) {
+                  setAudioPlaybackError('ไม่พบไฟล์เสียงหรือลิงก์ไม่ถูกต้อง');
+                }
+              });
+          }
         } else {
           audioRef.current.pause();
         }
@@ -403,15 +435,21 @@ export const MusicPlayer: React.FC<Props> = ({
     if (!file) return;
 
     try {
+      const trackId = `custom_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+      await saveCustomAudio(file, file.name, trackId);
+      // Also save to default offline key for backward compatibility
       await saveCustomAudio(file, file.name);
+
       const url = URL.createObjectURL(file);
       const added = addCustomTrack({
+        id: trackId,
         title: file.name.replace(/\.[^/.]+$/, ''),
-        artist: 'ไฟล์ของคุณในเครื่อง',
+        artist: 'ไฟล์ของคุณในเครื่อง (ออฟไลน์)',
         type: 'audio',
         src: url,
         duration: 240
       });
+      setAudioPlaybackError(null);
       setAddSuccess(`อัปโหลดเพลง "${added.title}" สำเร็จแล้ว!`);
       setTimeout(() => setAddSuccess(null), 3500);
     } catch (err) {
@@ -432,6 +470,29 @@ export const MusicPlayer: React.FC<Props> = ({
         <audio
           ref={audioRef}
           src={currentTrack.src}
+          preload="auto"
+          onCanPlay={() => {
+            if (isPlaying && audioRef.current) {
+              audioRef.current.play().catch(err => {
+                if (err.name === 'NotAllowedError') {
+                  setAudioPlaybackError('เบราว์เซอร์บล็อกการเล่นอัตโนมัติ กรุณากดปุ่มเล่นเพลง');
+                }
+              });
+            }
+          }}
+          onLoadedMetadata={() => {
+            if (audioRef.current && audioRef.current.duration) {
+              setProgress(audioRef.current.currentTime, audioRef.current.duration);
+            }
+          }}
+          onError={(e) => {
+            console.warn('HTML5 Audio error on currentTrack:', e);
+            if (!currentTrack.src) {
+              setAudioPlaybackError('ยังไม่พบลำธารเสียง (กำลังโหลดไฟล์เสียง...)');
+            } else {
+              setAudioPlaybackError('ไม่สามารถโหลดเสียงจากไฟล์หรือลิงก์นี้ได้');
+            }
+          }}
           onTimeUpdate={() => {
             if (audioRef.current) {
               setProgress(audioRef.current.currentTime, audioRef.current.duration || 240);
@@ -670,8 +731,26 @@ export const MusicPlayer: React.FC<Props> = ({
               />
             </div>
 
+            {/* Audio Playback Autoplay / Error Notice */}
+            {audioPlaybackError && (
+              <div 
+                onClick={() => {
+                  soundManager.playClick();
+                  if (audioRef.current) {
+                    audioRef.current.play().then(() => setAudioPlaybackError(null)).catch(() => {});
+                  }
+                  if (!isPlaying) togglePlay();
+                }}
+                className="mt-1.5 text-center py-1 px-2.5 bg-amber-500/20 border border-amber-500/40 rounded-xl cursor-pointer hover:bg-amber-500/30 transition flex items-center justify-center gap-1.5 text-amber-300 text-[11px] font-bold"
+              >
+                <AlertCircle className="h-3.5 w-3.5 shrink-0 text-amber-400" />
+                <span className="truncate">{audioPlaybackError}</span>
+                <span className="underline ml-1 shrink-0 text-white font-black">(แตะเพื่อเปิดเสียง)</span>
+              </div>
+            )}
+
             {/* Live Lyrics Subtitle ticker */}
-            {lyricsList && activeLyric && (
+            {!audioPlaybackError && lyricsList && activeLyric && (
               <div 
                 onClick={() => {
                   soundManager.playClick();
@@ -751,6 +830,24 @@ export const MusicPlayer: React.FC<Props> = ({
                 <h4 className="font-black text-base text-white">{currentTrack.title}</h4>
                 <p className="text-xs text-pink-300 font-bold mt-0.5">{currentTrack.artist}</p>
               </div>
+
+              {/* Audio Playback Error Alert inside Modal */}
+              {audioPlaybackError && (
+                <div 
+                  onClick={() => {
+                    soundManager.playClick();
+                    if (audioRef.current) {
+                      audioRef.current.play().then(() => setAudioPlaybackError(null)).catch(() => {});
+                    }
+                    if (!isPlaying) togglePlay();
+                  }}
+                  className="w-full text-center py-2 px-3 bg-amber-500/20 border border-amber-500/40 rounded-2xl cursor-pointer hover:bg-amber-500/30 transition flex items-center justify-center gap-2 text-amber-300 text-xs font-bold"
+                >
+                  <AlertCircle className="h-4 w-4 shrink-0 text-amber-400" />
+                  <span>{audioPlaybackError}</span>
+                  <span className="underline text-white font-black">(คลิกเพื่อเปิดเสียง)</span>
+                </div>
+              )}
 
               {/* Progress Slider & Timestamps */}
               <div className="w-full space-y-1">
@@ -924,6 +1021,10 @@ export const MusicPlayer: React.FC<Props> = ({
                           <button
                             onClick={() => {
                               soundManager.playClick();
+                              deleteCustomAudio(track.id);
+                              if (track.id === 'stored_offline_audio') {
+                                deleteCustomAudio();
+                              }
                               removeCustomTrack(track.id);
                             }}
                             title="ลบเพลงนี้"

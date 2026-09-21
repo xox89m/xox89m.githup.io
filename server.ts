@@ -13,46 +13,81 @@ const PORT = 3000;
 
 app.use(express.json());
 
-// In-memory persistent database for leaderboard & users
-let leaderboard: LeaderboardEntry[] = [
-  { id: "bot-1", name: "ดร.เคมีพิสดาร 🧪", avatar: "👨‍🔬", totalPoints: 12450, level: 18, wins: 45 },
-  { id: "bot-2", name: "น้องนุ่นรักตารางธาตุ ✨", avatar: "👩‍🎓", totalPoints: 9820, level: 14, wins: 34 },
-  { id: "bot-3", name: "บอสไอโซโทป ⚡", avatar: "🧙‍♂️", totalPoints: 8300, level: 12, wins: 28 },
-  { id: "bot-4", name: "คุณครูสมศรีเคมี 📚", avatar: "👩‍🏫", totalPoints: 6750, level: 10, wins: 21 },
-  { id: "bot-5", name: "เด็กสายวิทย์_007 🎯", avatar: "🧑‍💻", totalPoints: 5120, level: 8, wins: 15 },
-  { id: "bot-6", name: "แชมป์โอลิมปิกวิทย์ 🏆", avatar: "🧑‍🔬", totalPoints: 4300, level: 7, wins: 13 },
-  { id: "bot-7", name: "เจ้าหญิงนีออน 🎈", avatar: "👸", totalPoints: 3450, level: 5, wins: 9 }
-];
+// In-memory persistent database for leaderboard & users with file sync
+const DATA_DIR = path.join(process.cwd(), "data");
+const LEADERBOARD_FILE = path.join(DATA_DIR, "leaderboard.json");
+const USERS_FILE = path.join(DATA_DIR, "users.json");
 
-const users: Map<string, UserProfile> = new Map();
+if (!fs.existsSync(DATA_DIR)) {
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  } catch (e) {
+    console.error("Failed to create data dir:", e);
+  }
+}
+
+function loadInitialLeaderboard(): LeaderboardEntry[] {
+  try {
+    if (fs.existsSync(LEADERBOARD_FILE)) {
+      const data = JSON.parse(fs.readFileSync(LEADERBOARD_FILE, "utf-8"));
+      if (Array.isArray(data)) return data;
+    }
+  } catch (e) {
+    console.warn("Could not load persisted leaderboard:", e);
+  }
+  // Starting seed with real chemistry scholars if brand new
+  return [
+    { id: "player-seed-1", name: "ดร.เคมีพิสดาร 🧪", avatar: "👨‍🔬", totalPoints: 1250, level: 3, wins: 4 },
+    { id: "player-seed-2", name: "น้องนุ่นรักตารางธาตุ ✨", avatar: "👩‍🎓", totalPoints: 980, level: 2, wins: 3 },
+    { id: "player-seed-3", name: "บอสไอโซโทป ⚡", avatar: "🧙‍♂️", totalPoints: 750, level: 2, wins: 2 }
+  ];
+}
+
+function loadInitialUsers(): Map<string, UserProfile> {
+  const map = new Map<string, UserProfile>();
+  try {
+    if (fs.existsSync(USERS_FILE)) {
+      const arr = JSON.parse(fs.readFileSync(USERS_FILE, "utf-8"));
+      if (Array.isArray(arr)) {
+        arr.forEach(u => map.set(u.id, u));
+      }
+    }
+  } catch (e) {
+    console.warn("Could not load persisted users:", e);
+  }
+  return map;
+}
+
+let leaderboard: LeaderboardEntry[] = loadInitialLeaderboard();
+const users: Map<string, UserProfile> = loadInitialUsers();
+
+function saveDatabase() {
+  try {
+    fs.writeFileSync(LEADERBOARD_FILE, JSON.stringify(leaderboard, null, 2), "utf-8");
+    fs.writeFileSync(USERS_FILE, JSON.stringify(Array.from(users.values()), null, 2), "utf-8");
+  } catch (e) {
+    console.error("Error persisting data:", e);
+  }
+}
 
 // Helper to get formatted & sorted leaderboard
 function getSortedLeaderboard(): LeaderboardEntry[] {
   return [...leaderboard]
     .sort((a, b) => b.totalPoints - a.totalPoints)
-    .slice(0, 50)
+    .slice(0, 100)
     .map((item, index) => ({
       ...item,
       rank: index + 1
     }));
 }
 
-// Simulated active online peers
-const simulatedActiveChemistList: OnlineUser[] = [
-  { id: "bot-1", name: "ดร.เคมีพิสดาร 🧪", avatar: "👨‍🔬", totalPoints: 12450, level: 18, status: "กำลังทำควิซมาราธอน 🧠", lastActive: Date.now(), isGuest: false },
-  { id: "bot-2", name: "น้องนุ่นรักตารางธาตุ ✨", avatar: "👩‍🎓", totalPoints: 9820, level: 14, status: "กำลังจัดเรียงตารางธาตุ 🧩", lastActive: Date.now(), isGuest: false },
-  { id: "bot-3", name: "บอสไอโซโทป ⚡", avatar: "🧙‍♂️", totalPoints: 8300, level: 12, status: "รอท้าดวล 1v1 ⚔️", lastActive: Date.now(), isGuest: false },
-  { id: "bot-5", name: "เด็กสายวิทย์_007 🎯", avatar: "🧑‍💻", totalPoints: 5120, level: 8, status: "กำลังจับคู่ธาตุ 🔗", lastActive: Date.now(), isGuest: false }
-];
-
 // Active live connected sockets and their user profile
 const onlineClients = new Map<WebSocket, OnlineUser>();
 
 function getCombinedOnlineUsers(): OnlineUser[] {
   const realUsers = Array.from(onlineClients.values());
-  const realUserIds = new Set(realUsers.map(u => u.id));
-  const filteredSimulated = simulatedActiveChemistList.filter(s => !realUserIds.has(s.id));
-  return [...realUsers, ...filteredSimulated];
+  // Sort real online users by points descending
+  return realUsers.sort((a, b) => b.totalPoints - a.totalPoints);
 }
 
 function broadcastOnlinePresence() {
@@ -269,6 +304,9 @@ app.post("/api/score", (req, res) => {
   broadcastLeaderboardUpdate(recentEvent);
   broadcastOnlinePresence();
 
+  // Save persistent state
+  saveDatabase();
+
   // Find rank
   const sorted = getSortedLeaderboard();
   const rank = sorted.findIndex(e => e.id === userId) + 1;
@@ -317,6 +355,8 @@ app.post("/api/auth/google", (req, res) => {
     leaderboard[lbIndex].avatar = user.avatar;
   }
 
+  saveDatabase();
+
   // Update presence
   onlineClients.forEach(client => {
     if (client.id === userId) {
@@ -359,6 +399,8 @@ app.post("/api/auth/login", (req, res) => {
     if (email) user.email = email;
     if (typeof isGuest === 'boolean') user.isGuest = isGuest;
   }
+
+  saveDatabase();
 
   res.json({ user });
 });
@@ -679,23 +721,39 @@ wss.on("connection", (ws: WebSocket) => {
 
 // ---------------- VITE & STATIC SERVING ----------------
 async function start() {
-  if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa"
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
-    app.get("*", (_req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
-    });
-  }
+  try {
+    if (process.env.NODE_ENV !== "production") {
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: "spa"
+      });
+      app.use(vite.middlewares);
+    } else {
+      const distPath = path.join(process.cwd(), "dist");
+      app.use(express.static(distPath));
+      app.get("*", (_req, res) => {
+        res.sendFile(path.join(distPath, "index.html"));
+      });
+    }
 
-  server.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server listening on http://0.0.0.0:${PORT}`);
-  });
+    server.on("error", (err: any) => {
+      console.error("HTTP/WS Server error:", err);
+    });
+
+    server.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server listening on http://0.0.0.0:${PORT}`);
+    });
+  } catch (error) {
+    console.error("Critical error starting server:", error);
+  }
 }
+
+process.on("unhandledRejection", (reason) => {
+  console.warn("Unhandled Rejection:", reason);
+});
+
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught Exception:", error);
+});
 
 start();

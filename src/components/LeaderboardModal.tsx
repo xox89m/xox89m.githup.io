@@ -56,16 +56,16 @@ export const LeaderboardModal: React.FC<Props> = ({
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <h2 className="text-lg font-black tracking-tight">กระดานคะแนนเรียลไทม์</h2>
+                <h2 className="text-lg font-black tracking-tight">กระดานจัดอันดับผู้เล่นจริง</h2>
                 <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                   isConnected ? 'bg-emerald-800 text-emerald-100' : 'bg-rose-800 text-rose-100'
                 }`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${isConnected ? 'bg-emerald-400 animate-ping' : 'bg-rose-400'}`} />
-                  {isConnected ? 'LIVE' : 'OFFLINE'}
+                  {isConnected ? 'LIVE SYNC' : 'OFFLINE'}
                 </span>
               </div>
               <p className="text-[11px] text-amber-950 font-bold">
-                เห็นคะแนนและชื่อผู้เล่นทุกคนสดๆ พร้อมกัน
+                จัดอันดับตามคะแนนผู้เล่นที่เข้ามาเล่นจริง สดแบบเรียลไทม์
               </p>
             </div>
           </div>

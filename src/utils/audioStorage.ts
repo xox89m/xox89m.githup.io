@@ -26,7 +26,7 @@ function openDB(): Promise<IDBDatabase> {
   });
 }
 
-export async function saveCustomAudio(file: File | Blob, fileName: string): Promise<void> {
+export async function saveCustomAudio(file: File | Blob, fileName: string, key: string = SONG_KEY): Promise<void> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite');
@@ -36,19 +36,19 @@ export async function saveCustomAudio(file: File | Blob, fileName: string): Prom
       name: fileName,
       updatedAt: Date.now()
     };
-    const req = store.put(data, SONG_KEY);
+    const req = store.put(data, key);
     req.onsuccess = () => resolve();
     req.onerror = () => reject(req.error);
   });
 }
 
-export async function loadCustomAudio(): Promise<{ blob: Blob; name: string } | null> {
+export async function loadCustomAudio(key: string = SONG_KEY): Promise<{ blob: Blob; name: string } | null> {
   try {
     const db = await openDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readonly');
       const store = tx.objectStore(STORE_NAME);
-      const req = store.get(SONG_KEY);
+      const req = store.get(key);
       req.onsuccess = () => {
         if (req.result && req.result.blob) {
           resolve({ blob: req.result.blob, name: req.result.name });
@@ -64,13 +64,13 @@ export async function loadCustomAudio(): Promise<{ blob: Blob; name: string } | 
   }
 }
 
-export async function deleteCustomAudio(): Promise<void> {
+export async function deleteCustomAudio(key: string = SONG_KEY): Promise<void> {
   try {
     const db = await openDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readwrite');
       const store = tx.objectStore(STORE_NAME);
-      const req = store.delete(SONG_KEY);
+      const req = store.delete(key);
       req.onsuccess = () => resolve();
       req.onerror = () => reject(req.error);
     });

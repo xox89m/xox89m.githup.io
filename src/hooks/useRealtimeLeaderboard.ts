@@ -2,21 +2,12 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { LeaderboardEntry, OnlineUser, LiveScoreEvent, UserProfile } from '../types';
 
 const DEFAULT_LEADERBOARD: LeaderboardEntry[] = [
-  { id: "bot-1", name: "ดร.เคมีพิสดาร 🧪", avatar: "👨‍🔬", totalPoints: 12450, level: 18, wins: 45, rank: 1 },
-  { id: "bot-2", name: "น้องนุ่นรักตารางธาตุ ✨", avatar: "👩‍🎓", totalPoints: 9820, level: 14, wins: 34, rank: 2 },
-  { id: "bot-3", name: "บอสไอโซโทป ⚡", avatar: "🧙‍♂️", totalPoints: 8300, level: 12, wins: 28, rank: 3 },
-  { id: "bot-4", name: "คุณครูสมศรีเคมี 📚", avatar: "👩‍🏫", totalPoints: 6750, level: 10, wins: 21, rank: 4 },
-  { id: "bot-5", name: "เด็กสายวิทย์_007 🎯", avatar: "🧑‍💻", totalPoints: 5120, level: 8, wins: 15, rank: 5 },
-  { id: "bot-6", name: "แชมป์โอลิมปิกวิทย์ 🏆", avatar: "🧑‍🔬", totalPoints: 4300, level: 7, wins: 13, rank: 6 },
-  { id: "bot-7", name: "เจ้าหญิงนีออน 🎈", avatar: "👸", totalPoints: 3450, level: 5, wins: 9, rank: 7 }
+  { id: "player-seed-1", name: "ดร.เคมีพิสดาร 🧪", avatar: "👨‍🔬", totalPoints: 1250, level: 3, wins: 4, rank: 1 },
+  { id: "player-seed-2", name: "น้องนุ่นรักตารางธาตุ ✨", avatar: "👩‍🎓", totalPoints: 980, level: 2, wins: 3, rank: 2 },
+  { id: "player-seed-3", name: "บอสไอโซโทป ⚡", avatar: "🧙‍♂️", totalPoints: 750, level: 2, wins: 2, rank: 3 }
 ];
 
-const DEFAULT_ONLINE: OnlineUser[] = [
-  { id: "bot-1", name: "ดร.เคมีพิสดาร 🧪", avatar: "👨‍🔬", totalPoints: 12450, level: 18, status: "กำลังทำควิซมาราธอน 🧠", lastActive: Date.now(), isGuest: false },
-  { id: "bot-2", name: "น้องนุ่นรักตารางธาตุ ✨", avatar: "👩‍🎓", totalPoints: 9820, level: 14, status: "กำลังจัดเรียงตารางธาตุ 🧩", lastActive: Date.now(), isGuest: false },
-  { id: "bot-3", name: "บอสไอโซโทป ⚡", avatar: "🧙‍♂️", totalPoints: 8300, level: 12, status: "รอท้าดวล 1v1 ⚔️", lastActive: Date.now(), isGuest: false },
-  { id: "bot-5", name: "เด็กสายวิทย์_007 🎯", avatar: "🧑‍💻", totalPoints: 5120, level: 8, status: "กำลังจับคู่ธาตุ 🔗", lastActive: Date.now(), isGuest: false }
-];
+const DEFAULT_ONLINE: OnlineUser[] = [];
 
 export function useRealtimeLeaderboard(user: UserProfile) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(DEFAULT_LEADERBOARD);

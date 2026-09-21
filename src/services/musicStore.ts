@@ -127,6 +127,38 @@ export const LYRICS_PHOTOGRAPH_PURPEECH: LyricLine[] = [
 
 export const DEFAULT_PLAYLIST: PlaylistItem[] = [
   {
+    id: 'halley_comet_fellow',
+    title: 'ดาวหางฮัลเลย์ (Halley\'s Comet)',
+    artist: 'fellow fellow',
+    type: 'youtube',
+    src: 'oZ4Yd8n39cE',
+    duration: 254
+  },
+  {
+    id: 'ping_nont_tanont',
+    title: 'พิง (เพลงประกอบละครกระเช้าสีดา)',
+    artist: 'NONT TANONT',
+    type: 'youtube',
+    src: '43Z3zEaeVzI',
+    duration: 260
+  },
+  {
+    id: 'fade_jeff_satur',
+    title: 'ลืมไปแล้วว่าลืมยังไง (Fade)',
+    artist: 'Jeff Satur',
+    type: 'youtube',
+    src: '3L6sXg65a6s',
+    duration: 236
+  },
+  {
+    id: 'lofi_chill_space_study',
+    title: 'Cosmic Lofi Chill Beats (ดนตรีฟังสบาย)',
+    artist: 'Lofi Science Lab',
+    type: 'youtube',
+    src: 'jfKfPfyJRdk',
+    duration: 1800
+  },
+  {
     id: 'guncharlie_perfect_goodbye',
     title: 'จากกันโดยสมบูรณ์',
     artist: 'guncharlie',
@@ -211,8 +243,16 @@ class MusicStoreService {
       if (customStr) {
         const customTracks: PlaylistItem[] = JSON.parse(customStr);
         if (Array.isArray(customTracks)) {
-          // Filter out any Chemistry lofi tracks
-          const filteredCustom = customTracks.filter(t => t.id !== 'lofi_chemistry_beats' && !t.title.toLowerCase().includes('chemistry lofi'));
+          // Filter out any Chemistry lofi tracks and stale/expired blob URLs that can't be played after refresh
+          const filteredCustom = customTracks
+            .filter(t => t.id !== 'lofi_chemistry_beats' && !t.title.toLowerCase().includes('chemistry lofi'))
+            .map(t => {
+              // If it's a blob url from previous session, keep the track definition but mark src empty so it can be restored from IndexedDB
+              if (t.src && t.src.startsWith('blob:')) {
+                return { ...t, src: '' };
+              }
+              return t;
+            });
           this.state.playlist = [...DEFAULT_PLAYLIST, ...filteredCustom];
         }
       } else {
@@ -340,25 +380,47 @@ class MusicStoreService {
     this.selectTrack(prevIdx);
   }
 
-  public addCustomTrack(track: Omit<PlaylistItem, 'id' | 'isCustom'>): PlaylistItem {
+  public addCustomTrack(track: Omit<PlaylistItem, 'id' | 'isCustom'> & { id?: string }): PlaylistItem {
     const newTrack: PlaylistItem = {
       ...track,
-      id: `custom_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      id: track.id || `custom_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       isCustom: true
     };
 
-    const nextPlaylist = [...this.state.playlist, newTrack];
-    this.state.playlist = nextPlaylist;
+    // If a track with this ID already exists, replace/update its src and details
+    const existingIdx = this.state.playlist.findIndex(t => t.id === newTrack.id);
+    let nextPlaylist: PlaylistItem[];
 
-    // Persist custom tracks
+    if (existingIdx !== -1) {
+      nextPlaylist = [...this.state.playlist];
+      nextPlaylist[existingIdx] = { ...nextPlaylist[existingIdx], ...newTrack };
+      this.state.playlist = nextPlaylist;
+      this.selectTrack(existingIdx);
+      return nextPlaylist[existingIdx];
+    } else {
+      nextPlaylist = [...this.state.playlist, newTrack];
+      this.state.playlist = nextPlaylist;
+    }
+
+    // Persist custom tracks (sanitizing transient blob URLs from localStorage so they don't break on next session)
     try {
-      const customTracks = nextPlaylist.filter(t => t.isCustom);
-      localStorage.setItem(STORAGE_CUSTOM_TRACKS, JSON.stringify(customTracks));
+      const customTracksToSave = nextPlaylist
+        .filter(t => t.isCustom)
+        .map(t => (t.src && t.src.startsWith('blob:') ? { ...t, src: '' } : t));
+      localStorage.setItem(STORAGE_CUSTOM_TRACKS, JSON.stringify(customTracksToSave));
     } catch {}
 
     // Automatically switch to the newly added song
     this.selectTrack(nextPlaylist.length - 1);
     return newTrack;
+  }
+
+  public updateTrackSrc(id: string, newSrc: string) {
+    const track = this.state.playlist.find(t => t.id === id);
+    if (track) {
+      track.src = newSrc;
+      this.notify();
+    }
   }
 
   public removeCustomTrack(id: string) {
@@ -389,15 +451,26 @@ class MusicStoreService {
     const trimmed = urlOrId.trim();
     if (!trimmed) return null;
 
-    // If directly an 11-char ID
+    // Direct 11-char ID
     if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
       return trimmed;
     }
 
-    // Match youtube.com or youtu.be patterns
-    const regex = /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/;
+    // Match youtube.com, youtu.be, shorts, live, embed patterns
+    const regex = /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/|live\/))([\w-]{11})/;
     const match = trimmed.match(regex);
-    return match ? match[1] : null;
+    if (match) return match[1];
+
+    // Check URL parameters directly if valid URL
+    try {
+      if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        const parsed = new URL(trimmed);
+        const v = parsed.searchParams.get('v');
+        if (v && /^[a-zA-Z0-9_-]{11}$/.test(v)) return v;
+      }
+    } catch {}
+
+    return null;
   }
 }
 
