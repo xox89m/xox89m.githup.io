@@ -7,7 +7,9 @@ import {
   Award, 
   UserCheck, 
   Zap, 
-  ShieldCheck
+  ShieldCheck,
+  BarChart3,
+  Target
 } from 'lucide-react';
 
 interface Props {
@@ -19,6 +21,7 @@ interface Props {
   latestEvent: LiveScoreEvent | null;
   onRefresh: () => void;
   isConnected: boolean;
+  onViewAnalytics?: (userId: string) => void;
 }
 
 export const LeaderboardModal: React.FC<Props> = ({ 
@@ -29,7 +32,8 @@ export const LeaderboardModal: React.FC<Props> = ({
   onlineUsers,
   latestEvent,
   onRefresh,
-  isConnected
+  isConnected,
+  onViewAnalytics
 }) => {
   const [activeTab, setActiveTab] = useState<'leaderboard' | 'online'>('leaderboard');
   const [refreshing, setRefreshing] = useState(false);
@@ -104,16 +108,33 @@ export const LeaderboardModal: React.FC<Props> = ({
                   <ShieldCheck className="h-3 w-3 text-emerald-600 dark:text-emerald-400" title="บัญชี Google ยืนยันแล้ว" />
                 )}
               </div>
-              <div className="text-[11px] text-amber-800 dark:text-amber-300/80 font-semibold">
-                {myRank > 0 ? `อันดับที่ #${myRank}` : 'ยังไม่มีอันดับ'} · เลเวล {currentUser.level} · ชนะศึก {currentUser.wins} ครั้ง
+              <div className="text-[11px] text-amber-800 dark:text-amber-300/80 font-semibold flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                <span>{myRank > 0 ? `อันดับที่ #${myRank}` : 'ยังไม่มีอันดับ'}</span>
+                <span>•</span>
+                <span>เลเวล {currentUser.level}</span>
+                <span>•</span>
+                <span className="text-emerald-700 dark:text-emerald-400 font-bold">🎯 แม่นยำ {currentUser.accuracy ?? 0}%</span>
+                <span>•</span>
+                <span>📝 {currentUser.totalAnswered ?? 0} ข้อ</span>
               </div>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-base font-black text-amber-950 dark:text-amber-200">
-              {currentUser.totalPoints.toLocaleString()}
+          <div className="flex flex-col items-end gap-1">
+            <div className="text-right">
+              <div className="text-base font-black text-amber-950 dark:text-amber-200">
+                {currentUser.totalPoints.toLocaleString()}
+              </div>
+              <div className="text-[10px] text-amber-700 dark:text-amber-400 font-bold">แต้มสะสมรวม</div>
             </div>
-            <div className="text-[10px] text-amber-700 dark:text-amber-400 font-bold">แต้มสะสมรวม</div>
+            {onViewAnalytics && (
+              <button
+                onClick={() => onViewAnalytics(currentUser.id)}
+                className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition cursor-pointer shadow-xs"
+              >
+                <BarChart3 className="w-3 h-3" />
+                <span>กราฟของคุณ</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -169,6 +190,9 @@ export const LeaderboardModal: React.FC<Props> = ({
             ) : (
               leaderboard.map((entry, index) => {
                 const isMe = entry.id === currentUser.id;
+                const isTop5 = index < 5;
+                const accuracy = entry.accuracy ?? (entry.id === 'bot-boss-3-1' ? 88 : (entry.wins > 0 ? Math.min(95, 65 + entry.wins * 6) : 0));
+                const totalQuestions = entry.totalAnswered ?? (entry.id === 'bot-boss-3-1' ? 35 : (entry.wins * 8 || 1));
                 let rankBadge = `${index + 1}`;
                 let rankColor = 'bg-slate-100 dark:bg-zinc-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-zinc-700';
 
@@ -181,48 +205,88 @@ export const LeaderboardModal: React.FC<Props> = ({
                 } else if (index === 2) {
                   rankBadge = '🥉 3';
                   rankColor = 'bg-amber-600 text-white border-amber-800';
+                } else if (index < 5) {
+                  rankBadge = `#${index + 1}`;
+                  rankColor = 'bg-blue-100 dark:bg-zinc-800 text-blue-900 dark:text-cyan-300 border-blue-300 dark:border-zinc-600 font-black';
                 }
 
                 return (
-                  <div 
-                    key={entry.id || index}
-                    className={`flex items-center justify-between p-2.5 rounded-2xl border-2 transition ${
-                      isMe 
-                        ? 'border-blue-600 dark:border-cyan-400 bg-blue-50 dark:bg-zinc-900 shadow-[2px_2px_0px_#2563eb] dark:shadow-[2px_2px_0px_#06b6d4]' 
-                        : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 hover:border-slate-400 dark:hover:border-zinc-700'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className={`flex h-7 min-w-7 items-center justify-center rounded-xl border px-1.5 text-xs font-black ${rankColor}`}>
+                  <React.Fragment key={entry.id || index}>
+                    {index === 0 && (
+                      <div className="flex items-center justify-between px-1 pt-1 pb-0.5 text-[11px] font-black text-amber-600 dark:text-amber-400">
+                        <span className="flex items-center gap-1">
+                          <Trophy className="w-3.5 h-3.5" />
+                          <span>5 อันดับแรกที่มีคะแนนสูงสุด (TOP 5)</span>
+                        </span>
+                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">🔴 สดเรียลไทม์</span>
+                      </div>
+                    )}
+                    {index === 5 && (
+                      <div className="flex items-center gap-1.5 px-1 pt-2 pb-0.5 text-[11px] font-bold text-slate-400 border-t border-slate-200 dark:border-zinc-800">
+                        <span>อันดับผู้เล่นคนอื่นๆ</span>
+                      </div>
+                    )}
+                    <div 
+                      className={`flex items-center justify-between p-2.5 rounded-2xl border-2 transition ${
+                        isMe 
+                          ? 'border-blue-600 dark:border-cyan-400 bg-blue-50 dark:bg-zinc-900 shadow-[2px_2px_0px_#2563eb] dark:shadow-[2px_2px_0px_#06b6d4]' 
+                          : isTop5
+                            ? 'border-slate-300 dark:border-zinc-750 bg-white dark:bg-zinc-900 hover:border-amber-400 dark:hover:border-amber-500'
+                            : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 hover:border-slate-400 dark:hover:border-zinc-700'
+                      }`}
+                    >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className={`flex h-7 min-w-7 items-center justify-center rounded-xl border px-1.5 text-xs font-black shrink-0 ${rankColor}`}>
                         {rankBadge}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl">{entry.avatar}</span>
-                        <div>
-                          <div className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1">
-                            <span>{entry.name}</span>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-xl shrink-0">{entry.avatar}</span>
+                        <div className="min-w-0">
+                          <div className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1 truncate">
+                            <span className="truncate">{entry.name}</span>
+                            {entry.id === 'bot-boss-3-1' && (
+                              <span className="text-[9px] bg-purple-700 text-white font-bold px-1.5 py-0.2 rounded-full shrink-0">
+                                บอส
+                              </span>
+                            )}
                             {isMe && (
-                              <span className="text-[10px] bg-blue-600 dark:bg-cyan-500 text-white dark:text-slate-950 font-bold px-1.5 py-0.2 rounded-full">
+                              <span className="text-[9px] bg-blue-600 dark:bg-cyan-500 text-white dark:text-slate-950 font-bold px-1.5 py-0.2 rounded-full shrink-0">
                                 คุณ
                               </span>
                             )}
                           </div>
-                          <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-2 font-medium">
-                            <span>เลเวล {entry.level}</span>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 font-medium mt-0.5">
+                            <span>Lv.{entry.level}</span>
                             <span>•</span>
-                            <span className="flex items-center gap-0.5 text-amber-600 dark:text-amber-400 font-bold">
-                              <Award className="h-3 w-3" /> ชนะ {entry.wins} ครั้ง
+                            <span className="text-amber-600 dark:text-amber-400 font-bold">
+                              ชนะ {entry.wins}
                             </span>
+                            <span>•</span>
+                            <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                              🎯 แม่น {accuracy}%
+                            </span>
+                            <span>•</span>
+                            <span>📝 {totalQuestions} ข้อ</span>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="text-right">
+                    <div className="flex flex-col items-end shrink-0 ml-2">
                       <div className="text-sm font-black text-slate-900 dark:text-white">
                         {entry.totalPoints.toLocaleString()}
                       </div>
                       <div className="text-[9px] text-slate-400 font-bold uppercase">คะแนน</div>
+                      {onViewAnalytics && (
+                        <button
+                          onClick={() => onViewAnalytics(entry.id)}
+                          title={`ดูกราฟวิเคราะห์ของผู้เล่น ${entry.name}`}
+                          className="mt-1 flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-800 dark:bg-blue-900/60 dark:hover:bg-blue-800 dark:text-blue-200 transition cursor-pointer"
+                        >
+                          <BarChart3 className="w-3 h-3" />
+                          <span>วิเคราะห์</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -283,13 +347,22 @@ export const LeaderboardModal: React.FC<Props> = ({
                       </div>
                     </div>
 
-                    <div className="text-right">
+                    <div className="flex flex-col items-end">
                       <div className="text-xs font-black text-slate-900 dark:text-white">
                         {onlineUser.totalPoints.toLocaleString()} แต้ม
                       </div>
                       <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
                         เลเวล {onlineUser.level}
                       </div>
+                      {onViewAnalytics && (
+                        <button
+                          onClick={() => onViewAnalytics(onlineUser.id)}
+                          className="mt-1 flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-800 dark:bg-blue-900/60 dark:hover:bg-blue-800 dark:text-blue-200 transition cursor-pointer"
+                        >
+                          <BarChart3 className="w-3 h-3" />
+                          <span>วิเคราะห์</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 );

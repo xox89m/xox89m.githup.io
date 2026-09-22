@@ -1,5 +1,6 @@
 import { collection, doc, setDoc, getDocs, query, limit, onSnapshot } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
+import { LeaderboardEntry, UserProfile } from '../types';
 
 export interface PlayLogEvent {
   id?: string;
@@ -226,6 +227,157 @@ export interface UserSummaryItem {
   total: number;
   correct: number;
   accuracy: number;
+}
+
+export interface PlayerScoreSummary {
+  userId: string;
+  name: string;
+  avatar: string;
+  totalPoints: number;
+  level: number;
+  wins: number;
+  totalAnswered: number;
+  totalCorrect: number;
+  accuracy: number;
+  rank?: number;
+  isBot?: boolean;
+  isCurrentUser?: boolean;
+  gamesPlayed?: number;
+  lastActive?: string;
+}
+
+/**
+ * Compute unified player list synchronizing Leaderboard points, levels, and play log analytics
+ */
+export function computeAllPlayersSummary(
+  logs: PlayLogEvent[],
+  leaderboard: LeaderboardEntry[] = [],
+  currentUser?: UserProfile
+): PlayerScoreSummary[] {
+  // Aggregate stats per userId from all play logs
+  const logStatsMap = new Map<string, { total: number; correct: number; lastTimestamp: string }>();
+  for (const log of logs) {
+    const uid = log.userId || 'anonymous';
+    const cur = logStatsMap.get(uid) || { total: 0, correct: 0, lastTimestamp: log.timestamp };
+    cur.total++;
+    if (log.isCorrect) cur.correct++;
+    if (new Date(log.timestamp).getTime() > new Date(cur.lastTimestamp).getTime()) {
+      cur.lastTimestamp = log.timestamp;
+    }
+    logStatsMap.set(uid, cur);
+  }
+
+  const playersMap = new Map<string, PlayerScoreSummary>();
+
+  // 1. Process leaderboard entries
+  for (const entry of leaderboard) {
+    const logStat = logStatsMap.get(entry.id);
+    const isBot = entry.id === 'bot-boss-3-1' || entry.name === 'บอส3/1';
+    
+    const totalAnswered = logStat ? logStat.total : (entry.totalAnswered ?? (isBot ? 35 : 0));
+    const totalCorrect = logStat ? logStat.correct : (isBot ? Math.round(totalAnswered * 0.88) : 0);
+    const accuracy = totalAnswered > 0
+      ? Math.round((totalCorrect / totalAnswered) * 100)
+      : (entry.accuracy ?? (isBot ? 88 : 0));
+
+    playersMap.set(entry.id, {
+      userId: entry.id,
+      name: entry.name,
+      avatar: entry.avatar,
+      totalPoints: entry.totalPoints,
+      level: entry.level || Math.max(1, Math.floor(entry.totalPoints / 500) + 1),
+      wins: entry.wins || 0,
+      totalAnswered,
+      totalCorrect,
+      accuracy,
+      isBot,
+      isCurrentUser: currentUser ? entry.id === currentUser.id : false,
+      lastActive: logStat?.lastTimestamp
+    });
+  }
+
+  // 2. Ensure currentUser is present and up to date with latest live state
+  if (currentUser) {
+    const existing = playersMap.get(currentUser.id);
+    const logStat = logStatsMap.get(currentUser.id);
+    const totalAnswered = logStat ? logStat.total : (existing?.totalAnswered || currentUser.totalAnswered || 0);
+    const totalCorrect = logStat ? logStat.correct : (existing?.totalCorrect || 0);
+    const accuracy = totalAnswered > 0 
+      ? Math.round((totalCorrect / totalAnswered) * 100)
+      : (existing?.accuracy || currentUser.accuracy || 0);
+
+    playersMap.set(currentUser.id, {
+      userId: currentUser.id,
+      name: currentUser.name,
+      avatar: currentUser.avatar,
+      totalPoints: Math.max(currentUser.totalPoints, existing?.totalPoints || 0),
+      level: Math.max(currentUser.level, existing?.level || 1),
+      wins: Math.max(currentUser.wins, existing?.wins || 0),
+      totalAnswered,
+      totalCorrect,
+      accuracy,
+      isBot: false,
+      isCurrentUser: true,
+      lastActive: logStat?.lastTimestamp
+    });
+  }
+
+  // 3. Add any users from logs who aren't in leaderboard yet
+  logStatsMap.forEach((stat, uid) => {
+    if (!playersMap.has(uid) && uid !== 'anonymous') {
+      const isGuest = uid.startsWith('guest-') || uid.startsWith('guest_');
+      const displayName = isGuest ? `นักทดลองเคมี (แขก)` : uid.replace(/^(google_|google-)/, '').slice(0, 18);
+      const points = stat.correct * 100;
+      const level = Math.max(1, Math.floor(points / 500) + 1);
+      const accuracy = stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : 0;
+
+      playersMap.set(uid, {
+        userId: uid,
+        name: displayName,
+        avatar: '🧑‍🔬',
+        totalPoints: points,
+        level,
+        wins: Math.floor(stat.correct / 5),
+        totalAnswered: stat.total,
+        totalCorrect: stat.correct,
+        accuracy,
+        isBot: false,
+        isCurrentUser: currentUser ? uid === currentUser.id : false,
+        lastActive: stat.lastTimestamp
+      });
+    }
+  });
+
+  // 4. Ensure บอส3/1 exists if leaderboard was empty
+  if (!playersMap.has('bot-boss-3-1')) {
+    playersMap.set('bot-boss-3-1', {
+      userId: 'bot-boss-3-1',
+      name: 'บอส3/1',
+      avatar: '👾',
+      totalPoints: 1000,
+      level: 3,
+      wins: 5,
+      totalAnswered: 35,
+      totalCorrect: 31,
+      accuracy: 88,
+      isBot: true,
+      isCurrentUser: false
+    });
+  }
+
+  // 5. Sort by totalPoints descending, tie-break by accuracy
+  const sorted = Array.from(playersMap.values()).sort((a, b) => {
+    if (b.totalPoints !== a.totalPoints) {
+      return b.totalPoints - a.totalPoints;
+    }
+    return b.accuracy - a.accuracy;
+  });
+
+  // Assign ranks
+  return sorted.map((p, idx) => ({
+    ...p,
+    rank: idx + 1
+  }));
 }
 
 /**

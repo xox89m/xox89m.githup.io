@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { UserProfile, Review, ReviewStats } from '../types';
+import { UserProfile, Review, ReviewStats, Achievement } from '../types';
 import { 
   X, 
   Trophy, 
@@ -14,7 +14,10 @@ import {
   Star,
   MessageSquare,
   Send,
-  CheckCircle2
+  CheckCircle2,
+  ChevronRight,
+  Lock,
+  Check
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { soundManager } from '../utils/audio';
@@ -23,6 +26,8 @@ import {
   subscribeToGameReviews,
   formatRelativeThaiTime
 } from '../services/reviewService';
+import { ALL_ACHIEVEMENTS, RARITY_INFO } from '../data/achievements';
+import { AchievementsSection } from './AchievementsSection';
 
 interface Props {
   isOpen: boolean;
@@ -31,7 +36,8 @@ interface Props {
   onLoginGoogle: (data: { name: string; email: string; avatar?: string; id?: string }) => void;
   onLogout?: () => void;
   onUpdateProfile: (name: string, avatar: string) => void;
-  initialTab?: 'account' | 'rating';
+  initialTab?: 'account' | 'achievements' | 'rating';
+  onRecordReview?: () => void;
 }
 
 const AVATARS = ['🧑‍🔬', '👨‍🔬', '👩‍🎓', '🧙‍♂️', '👸', '⚡', '🧪', '⚛️', '🏆', '💎'];
@@ -51,10 +57,17 @@ export const AuthModal: React.FC<Props> = ({
   onLoginGoogle,
   onLogout,
   onUpdateProfile,
-  initialTab = 'account'
+  initialTab = 'account',
+  onRecordReview
 }) => {
   // Modal Navigation Tab
-  const [modalTab, setModalTab] = useState<'account' | 'rating'>(initialTab);
+  const [modalTab, setModalTab] = useState<'account' | 'achievements' | 'rating'>(initialTab);
+
+  useEffect(() => {
+    if (initialTab) {
+      setModalTab(initialTab);
+    }
+  }, [initialTab]);
 
   // Profile Form States
   const [nameInput, setNameInput] = useState(user.name);
@@ -64,6 +77,9 @@ export const AuthModal: React.FC<Props> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const googleBtnRef = useRef<HTMLDivElement>(null);
+
+  // Selected Achievement Detail Modal
+  const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
 
   // Rating & Review States
   const [reviewSubTab, setReviewSubTab] = useState<'write' | 'list'>('write');
@@ -222,6 +238,10 @@ export const AuthModal: React.FC<Props> = ({
         origin: { y: 0.6 }
       });
 
+      if (onRecordReview) {
+        onRecordReview();
+      }
+
       setReviewSubmitSuccess(true);
       setIsSubmittingReview(false);
 
@@ -283,43 +303,61 @@ export const AuthModal: React.FC<Props> = ({
           </button>
         </div>
 
-        {/* Top Segmented Navigation Tabs: Login/Profile vs. Rating/Reviews */}
-        <div className="flex border-b border-slate-200 dark:border-zinc-800 bg-slate-100 dark:bg-zinc-900 p-1.5 gap-1.5 text-xs font-black shrink-0">
+        {/* Top Segmented Navigation Tabs: Profile vs. Achievements vs. Rating */}
+        <div className="flex border-b border-slate-200 dark:border-zinc-800 bg-slate-100 dark:bg-zinc-900 p-1.5 gap-1 text-xs font-black shrink-0">
           <button
+            type="button"
             onClick={() => {
               soundManager.playClick();
               setModalTab('account');
             }}
-            className={`flex-1 py-2 rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer ${
+            className={`flex-1 py-2 px-1 rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer ${
               modalTab === 'account'
                 ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-xs border border-slate-200 dark:border-zinc-700'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <LogIn className="h-3.5 w-3.5 text-blue-600 dark:text-cyan-400" />
-            <span>บัญชี & ล็อคอิน Google</span>
+            <LogIn className="h-3.5 w-3.5 text-blue-600 dark:text-cyan-400 shrink-0" />
+            <span className="truncate">โปรไฟล์ & บัญชี</span>
           </button>
 
           <button
+            type="button"
+            onClick={() => {
+              soundManager.playClick();
+              setModalTab('achievements');
+            }}
+            className={`flex-1 py-2 px-1 rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer ${
+              modalTab === 'achievements'
+                ? 'bg-amber-400 dark:bg-amber-500 text-slate-950 shadow-xs border border-amber-500 font-black'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Trophy className="h-3.5 w-3.5 text-amber-600 dark:text-slate-950 shrink-0" />
+            <span className="truncate">ความสำเร็จ ({(user.unlockedAchievements || []).length}/{ALL_ACHIEVEMENTS.length})</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => {
               soundManager.playClick();
               setModalTab('rating');
             }}
-            className={`flex-1 py-2 rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer ${
+            className={`flex-1 py-2 px-1 rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer ${
               modalTab === 'rating'
-                ? 'bg-amber-400 dark:bg-amber-500 text-slate-950 shadow-xs border border-amber-500 dark:border-amber-600'
+                ? 'bg-amber-400 dark:bg-amber-500 text-slate-950 shadow-xs border border-amber-500 font-black'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-600 dark:text-slate-950" />
-            <span>ให้คะแนน & รีวิว ({stats.averageRating.toFixed(1)}★)</span>
+            <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-600 dark:text-slate-950 shrink-0" />
+            <span className="truncate">รีวิว ({stats.averageRating.toFixed(1)}★)</span>
           </button>
         </div>
 
         {/* Modal Body Container */}
         <div className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1">
           {modalTab === 'account' ? (
-            /* TAB 1: USER STATS & GOOGLE LOGIN & QUICK RATING */
+            /* TAB 1: USER STATS & GOOGLE LOGIN & ACHIEVEMENTS SHOWCASE */
             <div className="space-y-4">
               {/* User Stats Card */}
               <div className="grid grid-cols-3 gap-2 rounded-2xl bg-slate-50 dark:bg-zinc-900 p-3 text-center border-2 border-slate-900 dark:border-zinc-800 shadow-[3px_3px_0px_#1e293b] dark:shadow-[3px_3px_0px_#27272a]">
@@ -343,6 +381,65 @@ export const AuthModal: React.FC<Props> = ({
                     ชนะศึกดวล
                   </div>
                   <div className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400">{user.wins} ครั้ง</div>
+                </div>
+              </div>
+
+              {/* ACHIEVEMENTS SHOWCASE IN PLAYER PROFILE */}
+              <div className="rounded-2xl border-2 border-slate-900 dark:border-zinc-800 bg-gradient-to-br from-amber-50/80 via-white to-amber-100/40 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-850 p-3.5 shadow-[3px_3px_0px_#1e293b] dark:shadow-[3px_3px_0px_#27272a] space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-black text-slate-900 dark:text-white">
+                    <Award className="h-4 w-4 text-amber-500" />
+                    <span>เหรียญตราความสำเร็จ</span>
+                    <span className="text-[10px] font-black px-1.5 py-0.2 rounded-full bg-amber-200 dark:bg-amber-950 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                      {(user.unlockedAchievements || []).length}/{ALL_ACHIEVEMENTS.length}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      soundManager.playClick();
+                      setModalTab('achievements');
+                    }}
+                    className="text-[11px] font-black text-blue-600 dark:text-cyan-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                  >
+                    <span>ดูทั้งหมด & ภารกิจ</span>
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                {/* Badge Icons Showcase */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 scrollbar-thin">
+                  {ALL_ACHIEVEMENTS.map(ach => {
+                    const isUnlocked = (user.unlockedAchievements || []).includes(ach.id);
+                    const rarity = RARITY_INFO[ach.rarity];
+                    return (
+                      <button
+                        key={ach.id}
+                        type="button"
+                        onClick={() => {
+                          soundManager.playClick();
+                          setSelectedAchievement(ach);
+                        }}
+                        title={`${ach.title} (${isUnlocked ? 'ปลดล็อกแล้ว' : 'ยังไม่ปลดล็อก'})`}
+                        className={`group relative flex flex-col items-center justify-center h-12 w-12 shrink-0 rounded-xl border-2 transition-transform active:scale-95 cursor-pointer ${
+                          isUnlocked
+                            ? `${rarity.border} ${rarity.bg} shadow-sm hover:scale-105`
+                            : 'border-slate-300 dark:border-zinc-800 bg-slate-100 dark:bg-zinc-900/60 opacity-40 hover:opacity-75'
+                        }`}
+                      >
+                        <span className="text-xl">{ach.icon}</span>
+                        {!isUnlocked ? (
+                          <span className="absolute -bottom-1 -right-1 bg-slate-800 text-white rounded-full p-0.5 text-[7px] border border-slate-700">
+                            🔒
+                          </span>
+                        ) : (
+                          <span className="absolute -bottom-1 -right-1 bg-emerald-600 text-white rounded-full p-0.5 text-[7px] shadow-xs">
+                            ✓
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -557,8 +654,15 @@ export const AuthModal: React.FC<Props> = ({
                 </button>
               </div>
             </div>
+          ) : modalTab === 'achievements' ? (
+            /* TAB 2: ACHIEVEMENTS & MISSIONS */
+            <AchievementsSection
+              user={user}
+              onSelectAchievement={setSelectedAchievement}
+              onNavigateTab={tab => setModalTab(tab)}
+            />
           ) : (
-            /* TAB 2: FULL RATING & REVIEW SYSTEM */
+            /* TAB 3: FULL RATING & REVIEW SYSTEM */
             <div className="space-y-4">
               {/* Review Sub-Tabs: Write Review vs Player Reviews */}
               <div className="flex border border-slate-200 dark:border-zinc-800 rounded-xl bg-slate-50 dark:bg-zinc-900 p-1 gap-1 text-xs font-bold">
@@ -880,9 +984,14 @@ export const AuthModal: React.FC<Props> = ({
         {/* Footer */}
         <div className="border-t border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-black px-5 py-3 text-center shrink-0 flex items-center justify-between">
           <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
-            {modalTab === 'account' ? 'บัญชีซิงก์เรียลไทม์กับ Google' : 'คะแนน & รีวิวซิงก์เรียลไทม์กับ Firestore'}
+            {modalTab === 'account' 
+              ? 'บัญชีและเหรียญรางวัลซิงก์เรียลไทม์' 
+              : modalTab === 'achievements' 
+              ? `ปลดล็อกแล้ว ${(user.unlockedAchievements || []).length} จาก ${ALL_ACHIEVEMENTS.length} รายการ`
+              : 'คะแนน & รีวิวซิงก์เรียลไทม์กับ Firestore'}
           </span>
           <button
+            type="button"
             onClick={() => {
               soundManager.playClick();
               onClose();
@@ -892,6 +1001,71 @@ export const AuthModal: React.FC<Props> = ({
             ปิดหน้าต่าง
           </button>
         </div>
+
+        {/* Selected Achievement Detail Popover */}
+        {selectedAchievement && (
+          <div 
+            className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-100"
+            onClick={() => setSelectedAchievement(null)}
+          >
+            <div 
+              className="w-full max-w-sm rounded-3xl bg-white dark:bg-zinc-900 border-2 border-slate-900 dark:border-zinc-700 p-5 shadow-2xl space-y-3 relative text-center"
+              onClick={e => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setSelectedAchievement(null)}
+                className="absolute top-3 right-3 p-1 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 dark:bg-zinc-800 text-3xl border-2 border-slate-900 dark:border-zinc-700 shadow-md">
+                {selectedAchievement.icon}
+              </div>
+
+              <div>
+                <h4 className="text-base font-black text-slate-900 dark:text-white">
+                  {selectedAchievement.title}
+                </h4>
+                <div className="mt-1 flex items-center justify-center gap-1.5">
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${RARITY_INFO[selectedAchievement.rarity].border} ${RARITY_INFO[selectedAchievement.rarity].bg}`}>
+                    {RARITY_INFO[selectedAchievement.rarity].label}
+                  </span>
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                    +{selectedAchievement.rewardPoints} แต้มโบนัส
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                {selectedAchievement.description}
+              </p>
+
+              <div className="pt-2 border-t border-slate-100 dark:border-zinc-800">
+                {(user.unlockedAchievements || []).includes(selectedAchievement.id) ? (
+                  <div className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1.5 rounded-xl border border-emerald-300 dark:border-emerald-700">
+                    <Check className="h-4 w-4 stroke-[3]" />
+                    <span>ปลดล็อกความสำเร็จนี้แล้ว!</span>
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-zinc-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700">
+                    <Lock className="h-3.5 w-3.5" />
+                    <span>ยังไม่ปลดล็อก เล่นเกมเพื่อทำภารกิจ</span>
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedAchievement(null)}
+                className="w-full py-2 bg-slate-900 dark:bg-zinc-800 hover:bg-slate-800 dark:hover:bg-zinc-700 text-white font-bold rounded-xl text-xs transition cursor-pointer"
+              >
+                ปิด
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

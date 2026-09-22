@@ -74,9 +74,10 @@ interface Props {
   user: UserProfile;
   onBackToMenu: () => void;
   onAddScore: (points: number, wonMatch?: boolean, combo?: number) => void;
+  onRecordBattleWin?: (opponent: { id?: string; name?: string }) => void;
 }
 
-export const ModeRealtimeBattle: React.FC<Props> = ({ user, onBackToMenu, onAddScore }) => {
+export const ModeRealtimeBattle: React.FC<Props> = ({ user, onBackToMenu, onAddScore, onRecordBattleWin }) => {
   const [matchStatus, setMatchStatus] = useState<'idle' | 'searching' | 'playing' | 'ended'>('idle');
   const [roomState, setRoomState] = useState<BattleRoomState | null>(null);
   const [currentQIndex, setCurrentQIndex] = useState(0);
@@ -323,6 +324,9 @@ export const ModeRealtimeBattle: React.FC<Props> = ({ user, onBackToMenu, onAddS
           origin: { y: 0.6 }
         });
         onAddScore(250, true, 3);
+        const oppId = Object.keys(roomState.players).find(id => id !== user.id);
+        const opp = oppId ? roomState.players[oppId] : null;
+        onRecordBattleWin?.({ id: oppId, name: opp?.name });
       } else if (isDraw) {
         soundManager.playClick();
         onAddScore(120, false, 1);

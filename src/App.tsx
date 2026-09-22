@@ -14,6 +14,8 @@ import { AudioSettingsModal } from './components/AudioSettingsModal';
 import { AnalyticsModal } from './components/AnalyticsModal';
 import { RatingReviewModal } from './components/RatingReviewModal';
 import { MusicPlayer } from './components/MusicPlayer';
+import { AchievementUnlockToast } from './components/AchievementUnlockToast';
+import { ALL_ACHIEVEMENTS, RARITY_INFO } from './data/achievements';
 import { soundManager } from './utils/audio';
 import { useMusic } from './hooks/useMusic';
 import { subscribeToGameReviews } from './services/reviewService';
@@ -28,11 +30,25 @@ import {
   LogIn,
   BarChart3,
   Music,
-  Star
+  Star,
+  Award
 } from 'lucide-react';
 
 export default function App() {
-  const { user, loginWithGoogle, logout, updateProfile, addScore } = useAuth();
+  const { 
+    user, 
+    loginWithGoogle, 
+    logout, 
+    updateProfile, 
+    addScore,
+    recordStreak,
+    recordMode,
+    recordBattleWin,
+    recordGridPlacement,
+    recordPropertyMatch,
+    recordExplorer,
+    recordReview
+  } = useAuth();
   const { 
     leaderboard, 
     onlineUsers, 
@@ -48,14 +64,15 @@ export default function App() {
   const [activeScreen, setActiveScreen] = useState<'home' | 'quiz' | 'grid' | 'match' | 'battle' | 'explorer'>('home');
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
-  const [authModalTab, setAuthModalTab] = useState<'account' | 'rating'>('account');
+  const [authModalTab, setAuthModalTab] = useState<'account' | 'rating' | 'achievements'>('account');
   const [showAudioSettings, setShowAudioSettings] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [analyticsInitialUserId, setAnalyticsInitialUserId] = useState<string>('all');
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [showMusicPlayerModal, setShowMusicPlayerModal] = useState(false);
   const { currentTrack, isPlaying: isMusicPlaying, togglePlay: toggleMusicPlay } = useMusic();
 
-  const openAuthModal = (tab: 'account' | 'rating' = 'account') => {
+  const openAuthModal = (tab: 'account' | 'rating' | 'achievements' = 'account') => {
     setAuthModalTab(tab);
     setShowAuth(true);
   };
@@ -143,6 +160,13 @@ export default function App() {
     return () => clearInterval(interval);
   }, [activeScreen]);
 
+  // Record game mode visited for the 'all_modes' achievement
+  useEffect(() => {
+    if (activeScreen !== 'home') {
+      recordMode(activeScreen);
+    }
+  }, [activeScreen, recordMode]);
+
   const currentSpotlight = ELEMENTS[spotlightIndex] || ELEMENTS[0];
   const cat = CATEGORY_INFO[currentSpotlight.category];
 
@@ -157,7 +181,7 @@ export default function App() {
         onlineCount={onlineCount}
         isConnected={isConnected}
         onOpenLeaderboard={() => setShowLeaderboard(true)}
-        onOpenAuth={(tab?: 'account' | 'rating') => openAuthModal(tab || 'account')}
+        onOpenAuth={(tab?: 'account' | 'rating' | 'achievements') => openAuthModal(tab || 'account')}
         onOpenAudio={() => setShowAudioSettings(true)}
         onOpenAnalytics={() => setShowAnalytics(true)}
         onOpenMusic={() => setShowMusicPlayerModal(true)}
@@ -366,6 +390,75 @@ export default function App() {
               </div>
             </div>
 
+            {/* Player Achievements Showcase Card */}
+            <div className="bg-gradient-to-br from-amber-500/10 via-amber-400/5 to-yellow-500/10 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-850 border-2 border-slate-900 dark:border-zinc-800 rounded-3xl p-3.5 shadow-[4px_4px_0px_#1e293b] dark:shadow-[4px_4px_0px_#27272a] space-y-2.5 transition-colors">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center text-sm font-black border border-slate-900 shadow-xs">
+                    🏆
+                  </div>
+                  <div>
+                    <div className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <span>ความสำเร็จผู้เล่น</span>
+                      <span className="text-[10px] font-black px-1.5 py-0.2 rounded-full bg-amber-200 dark:bg-amber-950 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                        {(user.unlockedAchievements || []).length}/{ALL_ACHIEVEMENTS.length}
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">
+                      ตอบถูก 10 ข้อติด, เล่นครบ 5 โหมด & ชนะศึกดวล
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    soundManager.playClick();
+                    openAuthModal('achievements');
+                  }}
+                  className="py-1 px-2.5 rounded-xl bg-slate-900 dark:bg-zinc-800 hover:bg-slate-800 dark:hover:bg-zinc-700 text-white font-black text-xs transition shadow-xs flex items-center gap-1 cursor-pointer"
+                >
+                  <span>ดูเหรียญ</span>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+
+              {/* Badges Ribbon */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 scrollbar-thin">
+                {ALL_ACHIEVEMENTS.map(ach => {
+                  const isUnlocked = (user.unlockedAchievements || []).includes(ach.id);
+                  const rarity = RARITY_INFO[ach.rarity];
+                  return (
+                    <button
+                      key={ach.id}
+                      type="button"
+                      onClick={() => {
+                        soundManager.playClick();
+                        openAuthModal('achievements');
+                      }}
+                      title={`${ach.title} (${isUnlocked ? 'ปลดล็อกแล้ว' : 'ยังไม่ปลดล็อก'})`}
+                      className={`group relative flex flex-col items-center justify-center h-11 w-11 shrink-0 rounded-xl border-2 transition-transform active:scale-95 cursor-pointer ${
+                        isUnlocked
+                          ? `${rarity.border} ${rarity.bg} shadow-xs hover:scale-105`
+                          : 'border-slate-300 dark:border-zinc-800 bg-slate-100 dark:bg-zinc-900/60 opacity-40 hover:opacity-70'
+                      }`}
+                    >
+                      <span className="text-lg">{ach.icon}</span>
+                      {!isUnlocked ? (
+                        <span className="absolute -bottom-1 -right-1 bg-slate-800 text-white rounded-full p-0.5 text-[7px] border border-slate-700">
+                          🔒
+                        </span>
+                      ) : (
+                        <span className="absolute -bottom-1 -right-1 bg-emerald-600 text-white rounded-full p-0.5 text-[7px] shadow-xs">
+                          ✓
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Game Modes Menu */}
             <div className="space-y-2.5">
               <div className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider pl-1 flex items-center justify-between">
@@ -530,6 +623,7 @@ export default function App() {
               <button
                 onClick={() => {
                   soundManager.playClick();
+                  setAnalyticsInitialUserId('all');
                   setShowAnalytics(true);
                 }}
                 className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-violet-50 dark:bg-zinc-950 hover:bg-violet-100 dark:hover:bg-zinc-900 border-2 border-slate-900 dark:border-zinc-800 shadow-[2px_2px_0px_#1e293b] dark:shadow-[2px_2px_0px_#27272a] text-center transition active:scale-98 cursor-pointer"
@@ -586,6 +680,7 @@ export default function App() {
             onAddScore={addScore}
             onOpenLeaderboard={() => setShowLeaderboard(true)}
             onUpdateStatus={updatePresenceStatus}
+            onRecordStreak={recordStreak}
           />
         )}
 
@@ -595,6 +690,7 @@ export default function App() {
             user={user}
             onBackToMenu={() => setActiveScreen('home')}
             onAddScore={addScore}
+            onRecordGridPlacement={recordGridPlacement}
           />
         )}
 
@@ -604,6 +700,7 @@ export default function App() {
             user={user}
             onBackToMenu={() => setActiveScreen('home')}
             onAddScore={addScore}
+            onRecordPropertyMatch={recordPropertyMatch}
           />
         )}
 
@@ -613,6 +710,7 @@ export default function App() {
             user={user}
             onBackToMenu={() => setActiveScreen('home')}
             onAddScore={addScore}
+            onRecordBattleWin={recordBattleWin}
           />
         )}
 
@@ -620,6 +718,7 @@ export default function App() {
         {activeScreen === 'explorer' && (
           <ModePeriodicExplorer
             onBackToMenu={() => setActiveScreen('home')}
+            onRecordExplorer={recordExplorer}
           />
         )}
       </main>
@@ -642,6 +741,12 @@ export default function App() {
         latestEvent={latestEvent}
         onRefresh={fetchLeaderboard}
         isConnected={isConnected}
+        onViewAnalytics={(targetUserId) => {
+          soundManager.playClick();
+          setShowLeaderboard(false);
+          setAnalyticsInitialUserId(targetUserId);
+          setShowAnalytics(true);
+        }}
       />
 
       <AuthModal
@@ -652,6 +757,7 @@ export default function App() {
         onLogout={logout}
         onUpdateProfile={updateProfile}
         initialTab={authModalTab}
+        onRecordReview={recordReview}
       />
 
       <AudioSettingsModal
@@ -663,6 +769,10 @@ export default function App() {
       <AnalyticsModal
         isOpen={showAnalytics}
         onClose={() => setShowAnalytics(false)}
+        currentUserId={user.id}
+        currentUser={user}
+        leaderboard={leaderboard}
+        initialSelectedUserId={analyticsInitialUserId}
       />
 
       {/* Rating and Review System Modal */}
@@ -679,6 +789,9 @@ export default function App() {
         onCloseModal={() => setShowMusicPlayerModal(false)}
         onRequestOpenModal={() => setShowMusicPlayerModal(true)}
       />
+
+      {/* Global Achievement Unlock Notification Toast */}
+      <AchievementUnlockToast />
     </div>
   );
 }

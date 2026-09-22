@@ -1,5 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import { UserProfile } from '../types';
+import { getLocalBackupLogs } from '../services/analytics';
+import {
+  unlockAchievement,
+  checkStreakAchievements,
+  recordModePlayed,
+  recordBattleWin as recordBattleWinUtil,
+  recordGridPlacementSuccess,
+  recordPropertyMatchSuccess,
+  recordExplorerElementView,
+  recordReviewSuccess,
+  checkScoreMilestones
+} from '../utils/achievementSystem';
 
 const STORAGE_KEY = 'periodic_game_user_v1';
 
@@ -23,7 +35,11 @@ export function useAuth() {
       gamesPlayed: 0,
       wins: 0,
       highestCombo: 0,
-      isGuest: true
+      isGuest: true,
+      unlockedAchievements: [],
+      modesPlayed: [],
+      achievementsProgress: {},
+      exploredElements: []
     };
   });
 
@@ -51,7 +67,9 @@ export function useAuth() {
             totalPoints: Math.max(prev.totalPoints, data.user.totalPoints || 0),
             level: Math.max(prev.level, data.user.level || 1),
             gamesPlayed: Math.max(prev.gamesPlayed, data.user.gamesPlayed || 0),
-            wins: Math.max(prev.wins, data.user.wins || 0)
+            wins: Math.max(prev.wins, data.user.wins || 0),
+            unlockedAchievements: Array.from(new Set([...(prev.unlockedAchievements || []), ...(data.user.unlockedAchievements || [])])),
+            modesPlayed: Array.from(new Set([...(prev.modesPlayed || []), ...(data.user.modesPlayed || [])]))
           }));
         }
       })
@@ -86,7 +104,11 @@ export function useAuth() {
       });
       const data = await res.json();
       if (data.user) {
-        setUser(data.user);
+        setUser(prev => ({
+          ...data.user,
+          unlockedAchievements: Array.from(new Set([...(prev.unlockedAchievements || []), ...(data.user.unlockedAchievements || [])])),
+          modesPlayed: Array.from(new Set([...(prev.modesPlayed || []), ...(data.user.modesPlayed || [])]))
+        }));
       }
     } catch (e) {
       console.error('Error logging in with Google on server:', e);
@@ -104,7 +126,11 @@ export function useAuth() {
       gamesPlayed: 0,
       wins: 0,
       highestCombo: 0,
-      isGuest: true
+      isGuest: true,
+      unlockedAchievements: [],
+      modesPlayed: [],
+      achievementsProgress: {},
+      exploredElements: []
     };
     setUser(guestUser);
     localStorage.removeItem(STORAGE_KEY);
@@ -129,8 +155,23 @@ export function useAuth() {
     }
   }, [user]);
 
-  const addScore = useCallback(async (points: number, wonMatch = false, combo = 0, gameMode = 'เกมตารางธาตุ') => {
+  const addScore = useCallback(async (
+    points: number, 
+    wonMatch = false, 
+    combo = 0, 
+    gameMode = 'เกมตารางธาตุ',
+    stats?: { totalAnswered?: number; totalCorrect?: number; accuracy?: number }
+  ) => {
     if (points <= 0) return;
+
+    // Calculate current user accuracy from local logs if available
+    const localLogs = getLocalBackupLogs();
+    const userLogs = localLogs.filter(l => l.userId === user.id);
+    const userTotalAnswered = stats?.totalAnswered ?? (userLogs.length > 0 ? userLogs.length : 1);
+    const userTotalCorrect = stats?.totalCorrect ?? (userLogs.length > 0 ? userLogs.filter(l => l.isCorrect).length : (wonMatch ? 1 : 0));
+    const userAccuracy = stats?.accuracy ?? (userTotalAnswered > 0 ? Math.round((userTotalCorrect / userTotalAnswered) * 100) : undefined);
+
+    let nextUser: UserProfile = { ...user };
 
     setUser(prev => {
       const newTotal = prev.totalPoints + points;
@@ -138,14 +179,24 @@ export function useAuth() {
       const newWins = wonMatch ? prev.wins + 1 : prev.wins;
       const newHighest = Math.max(prev.highestCombo, combo);
 
-      return {
+      let updated: UserProfile = {
         ...prev,
         totalPoints: newTotal,
         level: newLevel,
         gamesPlayed: prev.gamesPlayed + 1,
         wins: newWins,
-        highestCombo: newHighest
+        highestCombo: newHighest,
+        accuracy: userAccuracy ?? prev.accuracy,
+        totalAnswered: (prev.totalAnswered || 0) + (stats?.totalAnswered || 1)
       };
+
+      // Check 1000 score milestone
+      if (newTotal >= 1000) {
+        updated = checkScoreMilestones(updated);
+      }
+
+      nextUser = updated;
+      return updated;
     });
 
     try {
@@ -159,13 +210,55 @@ export function useAuth() {
           pointsAdded: points,
           wonMatch,
           combo,
-          gameMode
+          gameMode,
+          accuracy: userAccuracy,
+          totalAnswered: stats?.totalAnswered || 1,
+          totalCorrect: stats?.totalCorrect || (wonMatch ? 1 : 0),
+          unlockedAchievements: nextUser.unlockedAchievements || user.unlockedAchievements || [],
+          modesPlayed: nextUser.modesPlayed || user.modesPlayed || []
         })
       });
     } catch (e) {
       console.error('Error recording score:', e);
     }
-  }, [user.id, user.name, user.avatar]);
+  }, [user]);
+
+  // Achievement Trigger Actions
+  const recordStreak = useCallback((streak: number) => {
+    setUser(prev => checkStreakAchievements(prev, streak, addScore));
+  }, [addScore]);
+
+  const recordMode = useCallback((modeName: 'quiz' | 'battle' | 'grid' | 'match' | 'explorer') => {
+    setUser(prev => recordModePlayed(prev, modeName, addScore));
+  }, [addScore]);
+
+  const recordBattleWin = useCallback((opponent: { id?: string; name?: string }) => {
+    setUser(prev => recordBattleWinUtil(prev, opponent, addScore));
+  }, [addScore]);
+
+  const recordGridPlacement = useCallback(() => {
+    setUser(prev => recordGridPlacementSuccess(prev, addScore));
+  }, [addScore]);
+
+  const recordPropertyMatch = useCallback(() => {
+    setUser(prev => recordPropertyMatchSuccess(prev, addScore));
+  }, [addScore]);
+
+  const recordExplorerElement = useCallback((symbol: string) => {
+    setUser(prev => recordExplorerElementView(prev, symbol, addScore));
+  }, [addScore]);
+
+  const recordExplorer = useCallback((symbol?: string) => {
+    setUser(prev => recordExplorerElementView(prev, symbol || 'H', addScore));
+  }, [addScore]);
+
+  const recordReview = useCallback(() => {
+    setUser(prev => recordReviewSuccess(prev, addScore));
+  }, [addScore]);
+
+  const unlockById = useCallback((achievementId: string) => {
+    setUser(prev => unlockAchievement(prev, achievementId, addScore));
+  }, [addScore]);
 
   return {
     user,
@@ -173,6 +266,15 @@ export function useAuth() {
     loginWithGoogle,
     logout,
     updateProfile,
-    addScore
+    addScore,
+    recordStreak,
+    recordMode,
+    recordBattleWin,
+    recordGridPlacement,
+    recordPropertyMatch,
+    recordExplorer,
+    recordExplorerElement,
+    recordReview,
+    unlockById
   };
 }

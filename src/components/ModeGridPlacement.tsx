@@ -11,9 +11,10 @@ interface Props {
   user?: UserProfile;
   onBackToMenu: () => void;
   onAddScore: (points: number, wonMatch?: boolean, combo?: number) => void;
+  onRecordGridPlacement?: () => void;
 }
 
-export const ModeGridPlacement: React.FC<Props> = ({ user, onBackToMenu, onAddScore }) => {
+export const ModeGridPlacement: React.FC<Props> = ({ user, onBackToMenu, onAddScore, onRecordGridPlacement }) => {
   const [isTutorial, setIsTutorial] = useState(true);
   const [groupStageIndex, setGroupStageIndex] = useState(0);
   const [missingStep, setMissingStep] = useState(1);
@@ -148,6 +149,7 @@ export const ModeGridPlacement: React.FC<Props> = ({ user, onBackToMenu, onAddSc
     const points = Math.min(newCombo, 5) * 10;
     setScore(prev => prev + points);
     onAddScore(points, false, newCombo);
+    onRecordGridPlacement?.();
 
     setFeedback({ text: `✅ ถูกต้อง! +${points} แต้ม`, type: 'correct' });
 

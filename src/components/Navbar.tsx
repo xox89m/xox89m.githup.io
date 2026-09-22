@@ -1,6 +1,6 @@
 import React from 'react';
 import { UserProfile, ReviewStats } from '../types';
-import { Trophy, Volume2, VolumeX, Sun, Moon, BarChart3, Music, Star } from 'lucide-react';
+import { Trophy, Volume2, VolumeX, Sun, Moon, BarChart3, Music, Star, Award } from 'lucide-react';
 import { useAudio } from '../hooks/useAudio';
 import { useMusic } from '../hooks/useMusic';
 
@@ -9,7 +9,7 @@ interface Props {
   onlineCount?: number;
   isConnected?: boolean;
   onOpenLeaderboard: () => void;
-  onOpenAuth: (initialTab?: 'account' | 'rating') => void;
+  onOpenAuth: (initialTab?: 'account' | 'rating' | 'achievements') => void;
   onOpenAudio: () => void;
   onOpenAnalytics: () => void;
   onOpenMusic?: () => void;
@@ -149,6 +149,22 @@ export const Navbar: React.FC<Props> = ({
           >
             <Trophy className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
             <span className="hidden sm:inline">{user.totalPoints.toLocaleString()}</span>
+          </button>
+
+          {/* Achievements Trophy Badge */}
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              onOpenAuth('achievements');
+            }}
+            title={`ความสำเร็จ: ปลดล็อกแล้ว ${(user.unlockedAchievements || []).length} เหรียญ`}
+            className="flex items-center gap-1 py-1 px-2 rounded-xl bg-amber-100 dark:bg-amber-950/80 hover:bg-amber-200 dark:hover:bg-amber-900/60 border-2 border-slate-900 dark:border-zinc-800 text-amber-950 dark:text-amber-200 text-xs font-black shadow-[2px_2px_0px_#1e293b] dark:shadow-[2px_2px_0px_#27272a] transition active:translate-y-0.5 cursor-pointer"
+          >
+            <Award className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+            <span className="text-[11px] font-black">
+              {(user.unlockedAchievements || []).length}
+            </span>
           </button>
 
           {/* User Profile & Login Button with Integrated Rating Badge */}

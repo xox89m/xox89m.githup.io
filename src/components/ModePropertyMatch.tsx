@@ -10,9 +10,10 @@ interface Props {
   user?: UserProfile;
   onBackToMenu: () => void;
   onAddScore: (points: number, wonMatch?: boolean, combo?: number) => void;
+  onRecordPropertyMatch?: () => void;
 }
 
-export const ModePropertyMatch: React.FC<Props> = ({ user, onBackToMenu, onAddScore }) => {
+export const ModePropertyMatch: React.FC<Props> = ({ user, onBackToMenu, onAddScore, onRecordPropertyMatch }) => {
   const [stage, setStage] = useState(1);
   const [score, setScore] = useState(0);
   const [combo, setCombo] = useState(0);
@@ -99,6 +100,7 @@ export const ModePropertyMatch: React.FC<Props> = ({ user, onBackToMenu, onAddSc
       const points = Math.min(newCombo, 5) * 10;
       setScore(prev => prev + points);
       onAddScore(points, false, newCombo);
+      onRecordPropertyMatch?.();
 
       setFeedback({ text: `✅ จับคู่ถูกต้อง! +${points} แต้ม`, type: 'correct' });
 

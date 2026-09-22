@@ -1,25 +1,17 @@
 [
   {
-    "id": "bot-boss-3-1",
-    "name": "บอส3/1",
-    "avatar": "👾",
-    "totalPoints": 2450,
-    "level": 5,
-    "wins": 18,
-    "accuracy": 94,
-    "totalAnswered": 56,
-    "rank": 1
-  },
-  {
     "id": "google-xox89m97_gmail_com",
     "name": "ไตตั้น",
+    "email": "xox89m97@gmail.com",
     "avatar": "🧑‍🔬",
     "totalPoints": 2180,
     "level": 5,
+    "gamesPlayed": 48,
     "wins": 15,
+    "highestCombo": 12,
+    "isGuest": false,
     "accuracy": 91,
-    "totalAnswered": 48,
-    "rank": 2
+    "totalAnswered": 48
   },
   {
     "id": "player-noon-3-1",
@@ -27,10 +19,12 @@
     "avatar": "✨",
     "totalPoints": 1820,
     "level": 4,
+    "gamesPlayed": 42,
     "wins": 12,
+    "highestCombo": 10,
+    "isGuest": false,
     "accuracy": 88,
-    "totalAnswered": 42,
-    "rank": 3
+    "totalAnswered": 42
   },
   {
     "id": "player-thankun-3-1",
@@ -38,10 +32,12 @@
     "avatar": "⚡",
     "totalPoints": 1560,
     "level": 4,
+    "gamesPlayed": 36,
     "wins": 9,
+    "highestCombo": 8,
+    "isGuest": false,
     "accuracy": 84,
-    "totalAnswered": 36,
-    "rank": 4
+    "totalAnswered": 36
   },
   {
     "id": "player-fahsai-3-1",
@@ -49,9 +45,11 @@
     "avatar": "🧪",
     "totalPoints": 1390,
     "level": 3,
+    "gamesPlayed": 30,
     "wins": 8,
+    "highestCombo": 7,
+    "isGuest": false,
     "accuracy": 81,
-    "totalAnswered": 30,
-    "rank": 5
+    "totalAnswered": 30
   }
 ]

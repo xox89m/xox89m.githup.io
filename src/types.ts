@@ -23,6 +23,17 @@ export interface PeriodicElement {
   atomicMass?: number;
 }
 
+export interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  category: 'streak' | 'mode' | 'combat' | 'mastery' | 'social';
+  target: number;
+  rewardPoints: number;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -34,6 +45,13 @@ export interface UserProfile {
   wins: number;
   highestCombo: number;
   isGuest?: boolean;
+  accuracy?: number;
+  totalAnswered?: number;
+  unlockedAchievements?: string[];
+  modesPlayed?: string[];
+  currentStreak?: number;
+  achievementsProgress?: Record<string, number>;
+  exploredElements?: string[];
 }
 
 export interface LeaderboardEntry {
@@ -44,6 +62,9 @@ export interface LeaderboardEntry {
   level: number;
   wins: number;
   rank?: number;
+  accuracy?: number;
+  totalAnswered?: number;
+  unlockedAchievements?: string[];
 }
 
 export interface BattleQuestion {

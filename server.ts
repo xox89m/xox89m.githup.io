@@ -33,7 +33,9 @@ function loadInitialLeaderboard(): LeaderboardEntry[] {
     avatar: "👾",
     totalPoints: 1000,
     level: 3,
-    wins: 5
+    wins: 5,
+    accuracy: 88,
+    totalAnswered: 35
   };
 
   try {
@@ -45,8 +47,16 @@ function loadInitialLeaderboard(): LeaderboardEntry[] {
           !entry.id.startsWith("player-seed-") &&
           !["ดร.เคมีพิสดาร 🧪", "น้องนุ่นรักตารางธาตุ ✨", "บอสไอโซโทป ⚡", "เด็กสายวิทย์_007 🎯"].includes(entry.name)
         );
-        // Ensure บอส3/1 exists
-        if (!filtered.some(e => e.id === "bot-boss-3-1" || e.name === "บอส3/1")) {
+        // Ensure บอส3/1 exists with proper stats
+        const existingBossIndex = filtered.findIndex(e => e.id === "bot-boss-3-1" || e.name === "บอส3/1");
+        if (existingBossIndex >= 0) {
+          filtered[existingBossIndex] = {
+            ...bossBot,
+            ...filtered[existingBossIndex],
+            accuracy: filtered[existingBossIndex].accuracy ?? 88,
+            totalAnswered: filtered[existingBossIndex].totalAnswered ?? 35
+          };
+        } else {
           filtered.push(bossBot);
         }
         return filtered;
@@ -88,11 +98,18 @@ function saveDatabase() {
 // Helper to get formatted & sorted leaderboard
 function getSortedLeaderboard(): LeaderboardEntry[] {
   return [...leaderboard]
-    .sort((a, b) => b.totalPoints - a.totalPoints)
+    .sort((a, b) => {
+      if (b.totalPoints !== a.totalPoints) {
+        return b.totalPoints - a.totalPoints;
+      }
+      return (b.accuracy || 0) - (a.accuracy || 0);
+    })
     .slice(0, 100)
     .map((item, index) => ({
       ...item,
-      rank: index + 1
+      rank: index + 1,
+      accuracy: item.accuracy ?? (item.id === "bot-boss-3-1" ? 88 : (item.wins > 0 ? Math.min(95, 65 + item.wins * 6) : 0)),
+      totalAnswered: item.totalAnswered ?? (item.id === "bot-boss-3-1" ? 35 : (item.wins * 8 || 1))
     }));
 }
 
@@ -229,6 +246,11 @@ app.get("/api/leaderboard", (_req, res) => {
   res.json({ leaderboard: getSortedLeaderboard() });
 });
 
+// Get Players for Analytics Dashboard
+app.get("/api/analytics/players", (_req, res) => {
+  res.json({ players: getSortedLeaderboard() });
+});
+
 // Get Online Users
 app.get("/api/online-users", (_req, res) => {
   const list = getCombinedOnlineUsers();
@@ -237,7 +259,7 @@ app.get("/api/online-users", (_req, res) => {
 
 // Submit / Update Score
 app.post("/api/score", (req, res) => {
-  const { userId, name, avatar, pointsAdded, wonMatch, combo, gameMode } = req.body;
+  const { userId, name, avatar, pointsAdded, wonMatch, combo, gameMode, accuracy, totalAnswered, totalCorrect, unlockedAchievements, modesPlayed } = req.body;
   if (!userId || typeof pointsAdded !== "number") {
     res.status(400).json({ error: "Invalid payload" });
     return;
@@ -253,7 +275,11 @@ app.post("/api/score", (req, res) => {
       level: 1,
       gamesPlayed: 0,
       wins: 0,
-      highestCombo: 0
+      highestCombo: 0,
+      accuracy: typeof accuracy === "number" ? accuracy : undefined,
+      totalAnswered: typeof totalAnswered === "number" ? totalAnswered : 0,
+      unlockedAchievements: Array.isArray(unlockedAchievements) ? unlockedAchievements : [],
+      modesPlayed: Array.isArray(modesPlayed) ? modesPlayed : []
     };
   }
 
@@ -262,6 +288,18 @@ app.post("/api/score", (req, res) => {
   if (wonMatch) user.wins += 1;
   if (combo && combo > user.highestCombo) {
     user.highestCombo = combo;
+  }
+  if (typeof accuracy === "number") {
+    user.accuracy = accuracy;
+  }
+  if (typeof totalAnswered === "number") {
+    user.totalAnswered = (user.totalAnswered || 0) + totalAnswered;
+  }
+  if (Array.isArray(unlockedAchievements)) {
+    user.unlockedAchievements = Array.from(new Set([...(user.unlockedAchievements || []), ...unlockedAchievements]));
+  }
+  if (Array.isArray(modesPlayed)) {
+    user.modesPlayed = Array.from(new Set([...(user.modesPlayed || []), ...modesPlayed]));
   }
   // Level calculation (every 500 points = 1 level)
   user.level = Math.max(1, Math.floor(user.totalPoints / 500) + 1);
@@ -272,25 +310,23 @@ app.post("/api/score", (req, res) => {
   users.set(userId, user);
 
   // Update in leaderboard array
+  const lbEntry: LeaderboardEntry = {
+    id: user.id,
+    name: user.name,
+    avatar: user.avatar,
+    totalPoints: user.totalPoints,
+    level: user.level,
+    wins: user.wins,
+    accuracy: user.accuracy,
+    totalAnswered: user.totalAnswered,
+    unlockedAchievements: user.unlockedAchievements || []
+  };
+
   const lbIndex = leaderboard.findIndex(e => e.id === userId);
   if (lbIndex >= 0) {
-    leaderboard[lbIndex] = {
-      id: user.id,
-      name: user.name,
-      avatar: user.avatar,
-      totalPoints: user.totalPoints,
-      level: user.level,
-      wins: user.wins
-    };
+    leaderboard[lbIndex] = lbEntry;
   } else {
-    leaderboard.push({
-      id: user.id,
-      name: user.name,
-      avatar: user.avatar,
-      totalPoints: user.totalPoints,
-      level: user.level,
-      wins: user.wins
-    });
+    leaderboard.push(lbEntry);
   }
 
   // Update any active online connection for this user
@@ -390,7 +426,7 @@ app.post("/api/auth/google", (req, res) => {
 
 // Google or Guest Authentication endpoint
 app.post("/api/auth/login", (req, res) => {
-  const { id, name, email, avatar, isGuest } = req.body;
+  const { id, name, email, avatar, isGuest, unlockedAchievements, modesPlayed } = req.body;
   const userId = id || `user-${Date.now()}`;
   
   let user = users.get(userId);
@@ -405,7 +441,9 @@ app.post("/api/auth/login", (req, res) => {
       gamesPlayed: 0,
       wins: 0,
       highestCombo: 0,
-      isGuest: !!isGuest
+      isGuest: !!isGuest,
+      unlockedAchievements: Array.isArray(unlockedAchievements) ? unlockedAchievements : [],
+      modesPlayed: Array.isArray(modesPlayed) ? modesPlayed : []
     };
     users.set(userId, user);
   } else {
@@ -413,6 +451,12 @@ app.post("/api/auth/login", (req, res) => {
     if (avatar) user.avatar = avatar;
     if (email) user.email = email;
     if (typeof isGuest === 'boolean') user.isGuest = isGuest;
+    if (Array.isArray(unlockedAchievements)) {
+      user.unlockedAchievements = Array.from(new Set([...(user.unlockedAchievements || []), ...unlockedAchievements]));
+    }
+    if (Array.isArray(modesPlayed)) {
+      user.modesPlayed = Array.from(new Set([...(user.modesPlayed || []), ...modesPlayed]));
+    }
   }
 
   saveDatabase();

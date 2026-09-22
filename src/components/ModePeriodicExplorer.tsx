@@ -7,9 +7,10 @@ import { AtomIllustration } from './AtomIllustration';
 
 interface Props {
   onBackToMenu: () => void;
+  onRecordExplorer?: () => void;
 }
 
-export const ModePeriodicExplorer: React.FC<Props> = ({ onBackToMenu }) => {
+export const ModePeriodicExplorer: React.FC<Props> = ({ onBackToMenu, onRecordExplorer }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedElement, setSelectedElement] = useState<PeriodicElement | null>(null);
@@ -123,6 +124,7 @@ export const ModePeriodicExplorer: React.FC<Props> = ({ onBackToMenu }) => {
               onClick={() => {
                 soundManager.playElementSound(el.atomicNumber);
                 setSelectedElement(el);
+                onRecordExplorer?.();
               }}
               className={`p-2 rounded-2xl border-2 border-slate-900 dark:border-zinc-600 ${cat.bg} flex flex-col items-center justify-center text-center shadow-[3px_3px_0px_#1e293b] dark:shadow-[3px_3px_0px_#27272a] hover:-translate-y-0.5 hover:ring-2 hover:ring-blue-400 dark:hover:ring-cyan-400 transition cursor-pointer active:scale-95`}
             >

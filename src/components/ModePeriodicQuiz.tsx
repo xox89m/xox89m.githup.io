@@ -24,6 +24,7 @@ interface Props {
   onAddScore: (points: number, wonMatch?: boolean, combo?: number, gameMode?: string) => void;
   onOpenLeaderboard: () => void;
   onUpdateStatus?: (status: string) => void;
+  onRecordStreak?: (streak: number) => void;
 }
 
 export const ModePeriodicQuiz: React.FC<Props> = ({
@@ -31,7 +32,8 @@ export const ModePeriodicQuiz: React.FC<Props> = ({
   onBack,
   onAddScore,
   onOpenLeaderboard,
-  onUpdateStatus
+  onUpdateStatus,
+  onRecordStreak
 }) => {
   const [questionCount, setQuestionCount] = useState<5 | 10 | 20>(10);
   const [gameState, setGameState] = useState<'lobby' | 'playing' | 'result'>('lobby');
@@ -256,6 +258,9 @@ export const ModePeriodicQuiz: React.FC<Props> = ({
       setCombo(newCombo);
       if (newCombo > maxCombo) setMaxCombo(newCombo);
       setCorrectCount(prev => prev + 1);
+
+      // Trigger achievement streak and first correct answer check
+      onRecordStreak?.(newCombo);
 
       // Speed bonus & combo multiplier
       const timeBonus = timeLeft * 10;
