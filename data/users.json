@@ -15,7 +15,7 @@
   },
   {
     "id": "player-noon-3-1",
-    "name": "น้องนุ่น ม.3/1",
+    "name": "อิ่มใจ ม.3/1",
     "avatar": "✨",
     "totalPoints": 1820,
     "level": 4,
@@ -23,12 +23,12 @@
     "wins": 12,
     "highestCombo": 10,
     "isGuest": false,
-    "accuracy": 88,
-    "totalAnswered": 42
+    "accuracy": 90,
+    "totalAnswered": 60
   },
   {
     "id": "player-thankun-3-1",
-    "name": "แทนคุณ เคมี",
+    "name": "ปลื้ม 3/1 ",
     "avatar": "⚡",
     "totalPoints": 1560,
     "level": 4,
@@ -36,20 +36,20 @@
     "wins": 9,
     "highestCombo": 8,
     "isGuest": false,
-    "accuracy": 84,
-    "totalAnswered": 36
+    "accuracy": 85,
+    "totalAnswered": 40
   },
   {
     "id": "player-fahsai-3-1",
-    "name": "ฟ้าใส สายวิทย์",
+    "name": "บอส3/1นสว",
     "avatar": "🧪",
     "totalPoints": 1390,
-    "level": 3,
-    "gamesPlayed": 30,
-    "wins": 8,
-    "highestCombo": 7,
+    "level": -10,
+    "gamesPlayed": -30,
+    "wins": -8,
+    "highestCombo": 100,
     "isGuest": false,
-    "accuracy": 81,
+    "accuracy": 80,
     "totalAnswered": 30
   }
 ]
